@@ -1,0 +1,72 @@
+openapi: 3.0.0
+info:
+  title: ATHITIPRO LEADS CRM API
+  version: 1.0.0
+  description: API documentation for ATHITIPRO LEADS CRM
+
+servers:
+  - url: http://localhost:3000
+    description: Local development server
+
+paths:
+  /api/health:
+    get:
+      tags:
+        - Health
+      summary: Health Check
+      description: Returns the status of the API server including uptime and timestamp.
+      responses:
+        '200':
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  name:
+                    type: string
+                    example: OK
+                  statusCode:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Request completed successfully
+                  data:
+                    type: object
+                    properties:
+                      status:
+                        type: string
+                        example: OK
+                      uptime:
+                        type: integer
+                        example: 123
+                      timestamp:
+                        type: string
+                        format: date-time
+                        example: '2025-06-11T09:36:14.239Z'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  statusCode:
+                    type: integer
+                    example: 500
+                  error:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                        example: InternalServerError
+                      message:
+                        type: string
+                        example: System uptime could not be retrieved

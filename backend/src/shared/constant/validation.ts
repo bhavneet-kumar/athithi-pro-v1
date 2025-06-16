@@ -1,0 +1,9 @@
+export const PAGINATION_DEFAULT_PAGE = 1;
+export const PAGINATION_DEFAULT_LIMIT = 10;
+
+export const PASSWORD_MIN_LENGTH = 8;
+export const PASSWORD_MAX_LENGTH = 128;
+
+export const DUPLICATE_KEY_ERROR_CODE = 11_000;
+
+export const MAX_LOGIN_ATTEMPTS = 5;

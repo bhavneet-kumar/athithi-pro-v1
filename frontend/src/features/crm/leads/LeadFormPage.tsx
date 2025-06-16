@@ -1,9 +1,9 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { isValid } from 'date-fns';
 import { ArrowLeft, Save, X } from 'lucide-react';
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useForm } from 'react-hook-form';
-import { useNavigate, useParams } from 'react-router-dom';
+
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
 
@@ -20,9 +20,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { useCrmStore } from '@/lib/store';
 
-import { LeadSchema, LeadSource, LeadStatus } from '@/types/crm';
+import { LeadSource, LeadStatus } from '@/types/crm';
 
-import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -30,7 +29,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
+import { useNavigate, useParams } from '@tanstack/react-router';
 
 // Helper function to safely format a date to YYYY-MM-DD
 const formatSafeDate = (date: Date | string | undefined): string => {
@@ -79,7 +80,7 @@ const leadFormSchema = z.object({
 type LeadFormValues = z.infer<typeof leadFormSchema>;
 
 const LeadFormPage: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+  const { id } = useParams({ strict: false });
   const navigate = useNavigate();
   const { leads, addLead, updateLead, isOffline } = useCrmStore();
   const isEditMode = Boolean(id);
@@ -193,7 +194,7 @@ const LeadFormPage: React.FC = () => {
         });
       }
 
-      navigate('/crm/leads');
+      navigate({ to: '/crm/leads' });
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
@@ -217,7 +218,9 @@ const LeadFormPage: React.FC = () => {
             variant='ghost'
             size='sm'
             onClick={() =>
-              navigate(isEditMode ? `/crm/leads/${id}` : '/crm/leads')
+              navigate({
+                to: isEditMode ? `/crm/leads/${id}` : '/crm/leads',
+              })
             }
             className='mr-2'
           >
@@ -519,7 +522,9 @@ const LeadFormPage: React.FC = () => {
               type='button'
               variant='outline'
               onClick={() =>
-                navigate(isEditMode ? `/crm/leads/${id}` : '/crm/leads')
+                navigate({
+                  to: isEditMode ? `/crm/leads/${id}` : '/crm/leads',
+                })
               }
             >
               <X className='mr-2 h-4 w-4' /> Cancel

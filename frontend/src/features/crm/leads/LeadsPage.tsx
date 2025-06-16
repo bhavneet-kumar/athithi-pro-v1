@@ -1,22 +1,20 @@
 import {
-  User,
-  Plus,
-  List,
-  LayoutGrid,
-  Filter,
+  AlertTriangle,
   ArrowUpDown,
   FilePlus,
   FileText,
-  AlertTriangle,
+  Filter,
+  LayoutGrid,
+  List,
+  Plus,
+  User,
 } from 'lucide-react';
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useCallback, useMemo, useState } from 'react';
 
 import BulkUploadModal from './BulkUploadModal';
 import LeadKanbanView from './LeadKanbanView';
 import LeadListView from './LeadListView';
 
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -34,30 +32,149 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { useCrmStore } from '@/lib/store';
-import { LeadStatus } from '@/types/crm';
+import { LeadSource, LeadStatus } from '@/types/crm';
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useNavigate } from '@tanstack/react-router';
+
+interface FilterState {
+  status: LeadStatus | 'all';
+  source: LeadSource | 'all';
+  dateRange: 'all' | 'today' | 'week' | 'month';
+  assignee: string;
+  priority: 'all' | 'high' | 'medium' | 'low';
+}
+
+interface SortConfig {
+  key: 'name' | 'createdAt' | 'aiPriorityScore' | 'budget';
+  direction: 'asc' | 'desc';
+}
 
 const LeadsPage: React.FC = () => {
   const navigate = useNavigate();
   const { leads, leadViewMode, setLeadViewMode, isOffline } = useCrmStore();
+
+  // Enhanced state management
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<LeadStatus | 'all'>('all');
-
-  // Filter leads based on search term and status filter
-  const filteredLeads = leads.filter(lead => {
-    const matchesSearch =
-      searchTerm === '' ||
-      lead.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      lead.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      lead.phone?.includes(searchTerm);
-
-    const matchesStatus =
-      statusFilter === 'all' || lead.status === statusFilter;
-
-    return matchesSearch && matchesStatus;
+  const [filters, setFilters] = useState<FilterState>({
+    status: 'all',
+    source: 'all',
+    dateRange: 'all',
+    assignee: 'all',
+    priority: 'all',
   });
+  const [sortConfig, setSortConfig] = useState<SortConfig>({
+    key: 'createdAt',
+    direction: 'desc',
+  });
+
+  // Memoized filtering logic
+  const filteredLeads = useMemo(() => {
+    return leads.filter(lead => {
+      const matchesSearch =
+        !searchTerm ||
+        lead.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        lead.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        lead.phone?.includes(searchTerm);
+
+      const matchesStatus =
+        filters.status === 'all' || lead.status === filters.status;
+
+      const matchesSource =
+        filters.source === 'all' || lead.source === filters.source;
+
+      const matchesPriority = (() => {
+        if (filters.priority === 'all') {
+          return true;
+        }
+        const score = lead.aiPriorityScore || 0;
+        switch (filters.priority) {
+          case 'high':
+            return score >= 0.7;
+          case 'medium':
+            return score >= 0.4 && score < 0.7;
+          case 'low':
+            return score < 0.4;
+          default:
+            return true;
+        }
+      })();
+
+      const matchesDateRange = (() => {
+        if (filters.dateRange === 'all') {
+          return true;
+        }
+        const createdAt = new Date(lead.createdAt);
+        const now = new Date();
+        switch (filters.dateRange) {
+          case 'today':
+            return createdAt.toDateString() === now.toDateString();
+          case 'week': {
+            const weekAgo = new Date(now.setDate(now.getDate() - 7));
+            return createdAt >= weekAgo;
+          }
+          case 'month': {
+            const monthAgo = new Date(now.setMonth(now.getMonth() - 1));
+            return createdAt >= monthAgo;
+          }
+          default:
+            return true;
+        }
+      })();
+
+      const matchesAssignee =
+        filters.assignee === 'all' || lead.assignedTo === filters.assignee;
+
+      return (
+        matchesSearch &&
+        matchesStatus &&
+        matchesSource &&
+        matchesPriority &&
+        matchesDateRange &&
+        matchesAssignee
+      );
+    });
+  }, [leads, searchTerm, filters]);
+
+  // Memoized sorting logic
+  const sortedLeads = useMemo(() => {
+    return [...filteredLeads].sort((a, b) => {
+      const direction = sortConfig.direction === 'asc' ? 1 : -1;
+      switch (sortConfig.key) {
+        case 'name':
+          return direction * a.name.localeCompare(b.name);
+        case 'createdAt':
+          return (
+            direction *
+            (new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+          );
+        case 'aiPriorityScore':
+          return (
+            direction * ((a.aiPriorityScore || 0) - (b.aiPriorityScore || 0))
+          );
+        case 'budget':
+          return direction * ((a.budget || 0) - (b.budget || 0));
+        default:
+          return 0;
+      }
+    });
+  }, [filteredLeads, sortConfig]);
+
+  // Handler functions
+  const handleFilterChange = useCallback(
+    (key: keyof FilterState, value: string) => {
+      setFilters(prev => ({ ...prev, [key]: value }));
+    },
+    []
+  );
+
+  const handleSortChange = useCallback((key: SortConfig['key']) => {
+    setSortConfig(prev => ({
+      key,
+      direction: prev.key === key && prev.direction === 'desc' ? 'asc' : 'desc',
+    }));
+  }, []);
 
   return (
     <div className='space-y-6'>
@@ -72,7 +189,7 @@ const LeadsPage: React.FC = () => {
         <div className='flex gap-2'>
           <Button
             disabled={isOffline}
-            onClick={() => navigate('/crm/leads/new')}
+            onClick={() => navigate({ to: '/crm/leads/new' })}
           >
             <Plus className='mr-2 h-4 w-4' />
             Add Lead
@@ -94,66 +211,118 @@ const LeadsPage: React.FC = () => {
           />
         </div>
 
-        <div className='flex gap-2 self-start'>
+        <div className='flex flex-wrap gap-2'>
+          {/* Enhanced Filter Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant='outline' size='sm'>
                 <Filter className='mr-2 h-4 w-4' />
-                Filter
+                Filters (
+                {Object.values(filters).filter(v => v !== 'all').length})
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align='end'>
-              <DropdownMenuItem onClick={() => setStatusFilter('all')}>
+            <DropdownMenuContent className='w-56' align='end'>
+              <div className='px-2 py-1.5 text-sm font-semibold'>Status</div>
+              <DropdownMenuItem
+                onClick={() => handleFilterChange('status', 'all')}
+                className={filters.status === 'all' ? 'bg-muted' : ''}
+              >
                 All Statuses
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setStatusFilter(LeadStatus.NEW)}>
-                New Leads
-              </DropdownMenuItem>
+              {Object.values(LeadStatus).map(status => (
+                <DropdownMenuItem
+                  key={status}
+                  onClick={() => handleFilterChange('status', status)}
+                  className={filters.status === status ? 'bg-muted' : ''}
+                >
+                  {status.charAt(0).toUpperCase() + status.slice(1)}
+                </DropdownMenuItem>
+              ))}
+
+              <Separator className='my-2' />
+              <div className='px-2 py-1.5 text-sm font-semibold'>Source</div>
               <DropdownMenuItem
-                onClick={() => setStatusFilter(LeadStatus.CONTACTED)}
+                onClick={() => handleFilterChange('source', 'all')}
+                className={filters.source === 'all' ? 'bg-muted' : ''}
               >
-                Contacted
+                All Sources
               </DropdownMenuItem>
+              {Object.values(LeadSource).map(source => (
+                <DropdownMenuItem
+                  key={source}
+                  onClick={() => handleFilterChange('source', source)}
+                  className={filters.source === source ? 'bg-muted' : ''}
+                >
+                  {source.charAt(0).toUpperCase() + source.slice(1)}
+                </DropdownMenuItem>
+              ))}
+
+              <Separator className='my-2' />
+              <div className='px-2 py-1.5 text-sm font-semibold'>Priority</div>
               <DropdownMenuItem
-                onClick={() => setStatusFilter(LeadStatus.QUALIFIED)}
+                onClick={() => handleFilterChange('priority', 'all')}
+                className={filters.priority === 'all' ? 'bg-muted' : ''}
               >
-                Qualified
+                All Priorities
               </DropdownMenuItem>
+              {['high', 'medium', 'low'].map(priority => (
+                <DropdownMenuItem
+                  key={priority}
+                  onClick={() => handleFilterChange('priority', priority)}
+                  className={filters.priority === priority ? 'bg-muted' : ''}
+                >
+                  {priority.charAt(0).toUpperCase() + priority.slice(1)}
+                </DropdownMenuItem>
+              ))}
+
+              <Separator className='my-2' />
+              <div className='px-2 py-1.5 text-sm font-semibold'>
+                Date Range
+              </div>
               <DropdownMenuItem
-                onClick={() => setStatusFilter(LeadStatus.PROPOSAL)}
+                onClick={() => handleFilterChange('dateRange', 'all')}
+                className={filters.dateRange === 'all' ? 'bg-muted' : ''}
               >
-                Proposal Sent
+                All Time
               </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => setStatusFilter(LeadStatus.NEGOTIATION)}
-              >
-                In Negotiation
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => setStatusFilter(LeadStatus.BOOKED)}
-              >
-                Booked
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => setStatusFilter(LeadStatus.LOST)}
-              >
-                Lost
-              </DropdownMenuItem>
+              {['today', 'week', 'month'].map(range => (
+                <DropdownMenuItem
+                  key={range}
+                  onClick={() => handleFilterChange('dateRange', range)}
+                  className={filters.dateRange === range ? 'bg-muted' : ''}
+                >
+                  {range.charAt(0).toUpperCase() + range.slice(1)}
+                </DropdownMenuItem>
+              ))}
             </DropdownMenuContent>
           </DropdownMenu>
 
+          {/* Enhanced Sort Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant='outline' size='sm'>
                 <ArrowUpDown className='mr-2 h-4 w-4' />
-                Sort
+                Sort: {sortConfig.key} ({sortConfig.direction})
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align='end'>
-              <DropdownMenuItem>Newest First</DropdownMenuItem>
-              <DropdownMenuItem>Oldest First</DropdownMenuItem>
-              <DropdownMenuItem>A-Z by Name</DropdownMenuItem>
-              <DropdownMenuItem>Priority Score (High to Low)</DropdownMenuItem>
+              <div className='px-2 py-1.5 text-sm font-semibold'>Sort By</div>
+              {[
+                { key: 'name', label: 'Name' },
+                { key: 'createdAt', label: 'Created Date' },
+                { key: 'aiPriorityScore', label: 'Priority Score' },
+                { key: 'budget', label: 'Budget' },
+              ].map(option => (
+                <DropdownMenuItem
+                  key={option.key}
+                  onClick={() =>
+                    handleSortChange(option.key as SortConfig['key'])
+                  }
+                  className={sortConfig.key === option.key ? 'bg-muted' : ''}
+                >
+                  {option.label}
+                </DropdownMenuItem>
+              ))}
             </DropdownMenuContent>
           </DropdownMenu>
 
@@ -172,7 +341,7 @@ const LeadsPage: React.FC = () => {
               variant={leadViewMode === 'kanban' ? 'default' : 'ghost'}
               size='sm'
               onClick={() => setLeadViewMode('kanban')}
-              className='rounded-l-none'
+              className='rounded-l-none '
             >
               <LayoutGrid className='h-4 w-4' />
               <span className='sr-only'>Kanban view</span>
@@ -199,77 +368,65 @@ const LeadsPage: React.FC = () => {
         </TabsList>
         <TabsContent value='all' className='mt-4'>
           {leadViewMode === 'list' ? (
-            <LeadListView leads={filteredLeads} />
+            <LeadListView leads={sortedLeads} />
           ) : (
-            <LeadKanbanView leads={filteredLeads} />
+            <LeadKanbanView leads={sortedLeads} />
           )}
         </TabsContent>
         <TabsContent value='new' className='mt-4'>
           {leadViewMode === 'list' ? (
             <LeadListView
-              leads={filteredLeads.filter(l => l.status === LeadStatus.NEW)}
+              leads={sortedLeads.filter(l => l.status === LeadStatus.NEW)}
             />
           ) : (
             <LeadKanbanView
-              leads={filteredLeads.filter(l => l.status === LeadStatus.NEW)}
+              leads={sortedLeads.filter(l => l.status === LeadStatus.NEW)}
             />
           )}
         </TabsContent>
         <TabsContent value='contacted' className='mt-4'>
           {leadViewMode === 'list' ? (
             <LeadListView
-              leads={filteredLeads.filter(
-                l => l.status === LeadStatus.CONTACTED
-              )}
+              leads={sortedLeads.filter(l => l.status === LeadStatus.CONTACTED)}
             />
           ) : (
             <LeadKanbanView
-              leads={filteredLeads.filter(
-                l => l.status === LeadStatus.CONTACTED
-              )}
+              leads={sortedLeads.filter(l => l.status === LeadStatus.CONTACTED)}
             />
           )}
         </TabsContent>
         <TabsContent value='qualified' className='mt-4'>
           {leadViewMode === 'list' ? (
             <LeadListView
-              leads={filteredLeads.filter(
-                l => l.status === LeadStatus.QUALIFIED
-              )}
+              leads={sortedLeads.filter(l => l.status === LeadStatus.QUALIFIED)}
             />
           ) : (
             <LeadKanbanView
-              leads={filteredLeads.filter(
-                l => l.status === LeadStatus.QUALIFIED
-              )}
+              leads={sortedLeads.filter(l => l.status === LeadStatus.QUALIFIED)}
             />
           )}
         </TabsContent>
         <TabsContent value='proposal' className='mt-4'>
           {leadViewMode === 'list' ? (
             <LeadListView
-              leads={filteredLeads.filter(
-                l => l.status === LeadStatus.PROPOSAL
-              )}
+              leads={sortedLeads.filter(l => l.status === LeadStatus.PROPOSAL)}
             />
           ) : (
             <LeadKanbanView
-              leads={filteredLeads.filter(
-                l => l.status === LeadStatus.PROPOSAL
-              )}
+              leads={sortedLeads.filter(l => l.status === LeadStatus.PROPOSAL)}
             />
           )}
         </TabsContent>
         <TabsContent value='negotiation' className='mt-4'>
           {leadViewMode === 'list' ? (
             <LeadListView
-              leads={filteredLeads.filter(
+              leads={sortedLeads.filter(
                 l => l.status === LeadStatus.NEGOTIATION
               )}
             />
           ) : (
             <LeadKanbanView
-              leads={filteredLeads.filter(
+              leads={sortedLeads.filter(
                 l => l.status === LeadStatus.NEGOTIATION
               )}
             />
@@ -278,11 +435,11 @@ const LeadsPage: React.FC = () => {
         <TabsContent value='booked' className='mt-4'>
           {leadViewMode === 'list' ? (
             <LeadListView
-              leads={filteredLeads.filter(l => l.status === LeadStatus.BOOKED)}
+              leads={sortedLeads.filter(l => l.status === LeadStatus.BOOKED)}
             />
           ) : (
             <LeadKanbanView
-              leads={filteredLeads.filter(l => l.status === LeadStatus.BOOKED)}
+              leads={sortedLeads.filter(l => l.status === LeadStatus.BOOKED)}
             />
           )}
         </TabsContent>
@@ -307,7 +464,7 @@ const LeadsPage: React.FC = () => {
           <CardFooter className='flex justify-center border-t pt-6 pb-4 space-x-2'>
             <Button
               variant='outline'
-              onClick={() => navigate('/crm/leads/new')}
+              onClick={() => navigate({ to: '/crm/leads/new' })}
             >
               <FilePlus className='mr-2 h-4 w-4' />
               Create New Lead

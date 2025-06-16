@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowLeft, Send, X } from 'lucide-react';
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { useNavigate, useParams } from 'react-router-dom';
+
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
 
@@ -36,6 +36,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
+import { useNavigate, useParams } from '@tanstack/react-router';
 
 // Form schema
 const messageFormSchema = z.object({
@@ -48,7 +49,7 @@ const messageFormSchema = z.object({
 type MessageFormValues = z.infer<typeof messageFormSchema>;
 
 const MessageComposePage: React.FC = () => {
-  const { leadId } = useParams<{ leadId: string }>();
+  const { leadId } = useParams({ from: '/crm/communication/new/$leadId' });
   const navigate = useNavigate();
   const { leads, addCommunication, isOffline } = useCrmStore();
   const [channelType, setChannelType] = useState<CommunicationChannel>(
@@ -102,7 +103,7 @@ const MessageComposePage: React.FC = () => {
         description: `Your ${data.channel} message has been sent.`,
       });
 
-      navigate(`/crm/leads/${data.leadId}`);
+      navigate({ to: `/crm/leads/${data.leadId}` });
     } catch (error) {
       toast({
         title: 'Error',
@@ -127,7 +128,9 @@ const MessageComposePage: React.FC = () => {
             variant='ghost'
             size='sm'
             onClick={() =>
-              navigate(leadId ? `/crm/leads/${leadId}` : '/crm/communication')
+              navigate({
+                to: leadId ? `/crm/leads/${leadId}` : '/crm/communication',
+              })
             }
             className='mr-2'
           >
@@ -323,7 +326,9 @@ const MessageComposePage: React.FC = () => {
               type='button'
               variant='outline'
               onClick={() =>
-                navigate(leadId ? `/crm/leads/${leadId}` : '/crm/communication')
+                navigate({
+                  to: leadId ? `/crm/leads/${leadId}` : '/crm/communication',
+                })
               }
             >
               <X className='mr-2 h-4 w-4' /> Cancel

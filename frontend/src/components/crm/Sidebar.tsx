@@ -103,6 +103,7 @@ const Sidebar: React.FC = () => {
             <Link
               key={item.name}
               to={item.path}
+              viewTransition
               className={cn(
                 'flex items-center rounded-md px-2 py-1.5 text-sm font-medium transition-colors hover:bg-gray-100'
               )}

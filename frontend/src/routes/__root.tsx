@@ -1,5 +1,6 @@
 import Layout from '@/components/crm/Layout';
 import { Toaster } from '@/components/ui/sonner';
+import NotFound from '@/pages/NotFound';
 import { createRootRoute, Outlet } from '@tanstack/react-router';
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
 import { Loader2 } from 'lucide-react';
@@ -28,4 +29,5 @@ export const Route = createRootRoute({
       <div className='text-red-500'>Error: {error.message}</div>
     </div>
   ),
+  notFoundComponent: () => <NotFound />,
 });

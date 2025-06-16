@@ -9,38 +9,323 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as AuthRouteImport } from './routes/_auth'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CrmIndexRouteImport } from './routes/crm/index'
+import { Route as CrmDashboardRouteImport } from './routes/crm/dashboard'
+import { Route as CrmTasksIndexRouteImport } from './routes/crm/tasks/index'
+import { Route as CrmSegmentsIndexRouteImport } from './routes/crm/segments/index'
+import { Route as CrmLeadsIndexRouteImport } from './routes/crm/leads/index'
+import { Route as CrmInsightsIndexRouteImport } from './routes/crm/insights/index'
+import { Route as CrmCommunicationIndexRouteImport } from './routes/crm/communication/index'
+import { Route as CrmBookingsIndexRouteImport } from './routes/crm/bookings/index'
+import { Route as AuthRegistrationIndexRouteImport } from './routes/_auth/registration/index'
+import { Route as AuthLoginIndexRouteImport } from './routes/_auth/login/index'
+import { Route as AuthForgotPasswordIndexRouteImport } from './routes/_auth/forgot-password/index'
+import { Route as AuthConfirmMailIndexRouteImport } from './routes/_auth/confirm-mail/index'
+import { Route as CrmTasksNewRouteImport } from './routes/crm/tasks/new'
+import { Route as CrmLeadsNewRouteImport } from './routes/crm/leads/new'
+import { Route as CrmLeadsIdRouteImport } from './routes/crm/leads/$id'
+import { Route as CrmCommunicationNewRouteImport } from './routes/crm/communication/new'
+import { Route as CrmBookingsNewRouteImport } from './routes/crm/bookings/new'
+import { Route as CrmTasksNewLeadIdRouteImport } from './routes/crm/tasks/new.$leadId'
+import { Route as CrmLeadsIdEditRouteImport } from './routes/crm/leads/$id.edit'
+import { Route as CrmCommunicationNewLeadIdRouteImport } from './routes/crm/communication/new.$leadId'
+import { Route as CrmBookingsNewLeadIdRouteImport } from './routes/crm/bookings/new.$leadId'
 
+const AuthRoute = AuthRouteImport.update({
+  id: '/_auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CrmIndexRoute = CrmIndexRouteImport.update({
+  id: '/crm/',
+  path: '/crm/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CrmDashboardRoute = CrmDashboardRouteImport.update({
+  id: '/crm/dashboard',
+  path: '/crm/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CrmTasksIndexRoute = CrmTasksIndexRouteImport.update({
+  id: '/crm/tasks/',
+  path: '/crm/tasks/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CrmSegmentsIndexRoute = CrmSegmentsIndexRouteImport.update({
+  id: '/crm/segments/',
+  path: '/crm/segments/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CrmLeadsIndexRoute = CrmLeadsIndexRouteImport.update({
+  id: '/crm/leads/',
+  path: '/crm/leads/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CrmInsightsIndexRoute = CrmInsightsIndexRouteImport.update({
+  id: '/crm/insights/',
+  path: '/crm/insights/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CrmCommunicationIndexRoute = CrmCommunicationIndexRouteImport.update({
+  id: '/crm/communication/',
+  path: '/crm/communication/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CrmBookingsIndexRoute = CrmBookingsIndexRouteImport.update({
+  id: '/crm/bookings/',
+  path: '/crm/bookings/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRegistrationIndexRoute = AuthRegistrationIndexRouteImport.update({
+  id: '/registration/',
+  path: '/registration/',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthLoginIndexRoute = AuthLoginIndexRouteImport.update({
+  id: '/login/',
+  path: '/login/',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthForgotPasswordIndexRoute = AuthForgotPasswordIndexRouteImport.update({
+  id: '/forgot-password/',
+  path: '/forgot-password/',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthConfirmMailIndexRoute = AuthConfirmMailIndexRouteImport.update({
+  id: '/confirm-mail/',
+  path: '/confirm-mail/',
+  getParentRoute: () => AuthRoute,
+} as any)
+const CrmTasksNewRoute = CrmTasksNewRouteImport.update({
+  id: '/crm/tasks/new',
+  path: '/crm/tasks/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CrmLeadsNewRoute = CrmLeadsNewRouteImport.update({
+  id: '/crm/leads/new',
+  path: '/crm/leads/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CrmLeadsIdRoute = CrmLeadsIdRouteImport.update({
+  id: '/crm/leads/$id',
+  path: '/crm/leads/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CrmCommunicationNewRoute = CrmCommunicationNewRouteImport.update({
+  id: '/crm/communication/new',
+  path: '/crm/communication/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CrmBookingsNewRoute = CrmBookingsNewRouteImport.update({
+  id: '/crm/bookings/new',
+  path: '/crm/bookings/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CrmTasksNewLeadIdRoute = CrmTasksNewLeadIdRouteImport.update({
+  id: '/$leadId',
+  path: '/$leadId',
+  getParentRoute: () => CrmTasksNewRoute,
+} as any)
+const CrmLeadsIdEditRoute = CrmLeadsIdEditRouteImport.update({
+  id: '/edit',
+  path: '/edit',
+  getParentRoute: () => CrmLeadsIdRoute,
+} as any)
+const CrmCommunicationNewLeadIdRoute =
+  CrmCommunicationNewLeadIdRouteImport.update({
+    id: '/$leadId',
+    path: '/$leadId',
+    getParentRoute: () => CrmCommunicationNewRoute,
+  } as any)
+const CrmBookingsNewLeadIdRoute = CrmBookingsNewLeadIdRouteImport.update({
+  id: '/$leadId',
+  path: '/$leadId',
+  getParentRoute: () => CrmBookingsNewRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/crm/dashboard': typeof CrmDashboardRoute
+  '/crm': typeof CrmIndexRoute
+  '/crm/bookings/new': typeof CrmBookingsNewRouteWithChildren
+  '/crm/communication/new': typeof CrmCommunicationNewRouteWithChildren
+  '/crm/leads/$id': typeof CrmLeadsIdRouteWithChildren
+  '/crm/leads/new': typeof CrmLeadsNewRoute
+  '/crm/tasks/new': typeof CrmTasksNewRouteWithChildren
+  '/confirm-mail': typeof AuthConfirmMailIndexRoute
+  '/forgot-password': typeof AuthForgotPasswordIndexRoute
+  '/login': typeof AuthLoginIndexRoute
+  '/registration': typeof AuthRegistrationIndexRoute
+  '/crm/bookings': typeof CrmBookingsIndexRoute
+  '/crm/communication': typeof CrmCommunicationIndexRoute
+  '/crm/insights': typeof CrmInsightsIndexRoute
+  '/crm/leads': typeof CrmLeadsIndexRoute
+  '/crm/segments': typeof CrmSegmentsIndexRoute
+  '/crm/tasks': typeof CrmTasksIndexRoute
+  '/crm/bookings/new/$leadId': typeof CrmBookingsNewLeadIdRoute
+  '/crm/communication/new/$leadId': typeof CrmCommunicationNewLeadIdRoute
+  '/crm/leads/$id/edit': typeof CrmLeadsIdEditRoute
+  '/crm/tasks/new/$leadId': typeof CrmTasksNewLeadIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/crm/dashboard': typeof CrmDashboardRoute
+  '/crm': typeof CrmIndexRoute
+  '/crm/bookings/new': typeof CrmBookingsNewRouteWithChildren
+  '/crm/communication/new': typeof CrmCommunicationNewRouteWithChildren
+  '/crm/leads/$id': typeof CrmLeadsIdRouteWithChildren
+  '/crm/leads/new': typeof CrmLeadsNewRoute
+  '/crm/tasks/new': typeof CrmTasksNewRouteWithChildren
+  '/confirm-mail': typeof AuthConfirmMailIndexRoute
+  '/forgot-password': typeof AuthForgotPasswordIndexRoute
+  '/login': typeof AuthLoginIndexRoute
+  '/registration': typeof AuthRegistrationIndexRoute
+  '/crm/bookings': typeof CrmBookingsIndexRoute
+  '/crm/communication': typeof CrmCommunicationIndexRoute
+  '/crm/insights': typeof CrmInsightsIndexRoute
+  '/crm/leads': typeof CrmLeadsIndexRoute
+  '/crm/segments': typeof CrmSegmentsIndexRoute
+  '/crm/tasks': typeof CrmTasksIndexRoute
+  '/crm/bookings/new/$leadId': typeof CrmBookingsNewLeadIdRoute
+  '/crm/communication/new/$leadId': typeof CrmCommunicationNewLeadIdRoute
+  '/crm/leads/$id/edit': typeof CrmLeadsIdEditRoute
+  '/crm/tasks/new/$leadId': typeof CrmTasksNewLeadIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_auth': typeof AuthRouteWithChildren
+  '/crm/dashboard': typeof CrmDashboardRoute
+  '/crm/': typeof CrmIndexRoute
+  '/crm/bookings/new': typeof CrmBookingsNewRouteWithChildren
+  '/crm/communication/new': typeof CrmCommunicationNewRouteWithChildren
+  '/crm/leads/$id': typeof CrmLeadsIdRouteWithChildren
+  '/crm/leads/new': typeof CrmLeadsNewRoute
+  '/crm/tasks/new': typeof CrmTasksNewRouteWithChildren
+  '/_auth/confirm-mail/': typeof AuthConfirmMailIndexRoute
+  '/_auth/forgot-password/': typeof AuthForgotPasswordIndexRoute
+  '/_auth/login/': typeof AuthLoginIndexRoute
+  '/_auth/registration/': typeof AuthRegistrationIndexRoute
+  '/crm/bookings/': typeof CrmBookingsIndexRoute
+  '/crm/communication/': typeof CrmCommunicationIndexRoute
+  '/crm/insights/': typeof CrmInsightsIndexRoute
+  '/crm/leads/': typeof CrmLeadsIndexRoute
+  '/crm/segments/': typeof CrmSegmentsIndexRoute
+  '/crm/tasks/': typeof CrmTasksIndexRoute
+  '/crm/bookings/new/$leadId': typeof CrmBookingsNewLeadIdRoute
+  '/crm/communication/new/$leadId': typeof CrmCommunicationNewLeadIdRoute
+  '/crm/leads/$id/edit': typeof CrmLeadsIdEditRoute
+  '/crm/tasks/new/$leadId': typeof CrmTasksNewLeadIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/crm/dashboard'
+    | '/crm'
+    | '/crm/bookings/new'
+    | '/crm/communication/new'
+    | '/crm/leads/$id'
+    | '/crm/leads/new'
+    | '/crm/tasks/new'
+    | '/confirm-mail'
+    | '/forgot-password'
+    | '/login'
+    | '/registration'
+    | '/crm/bookings'
+    | '/crm/communication'
+    | '/crm/insights'
+    | '/crm/leads'
+    | '/crm/segments'
+    | '/crm/tasks'
+    | '/crm/bookings/new/$leadId'
+    | '/crm/communication/new/$leadId'
+    | '/crm/leads/$id/edit'
+    | '/crm/tasks/new/$leadId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/crm/dashboard'
+    | '/crm'
+    | '/crm/bookings/new'
+    | '/crm/communication/new'
+    | '/crm/leads/$id'
+    | '/crm/leads/new'
+    | '/crm/tasks/new'
+    | '/confirm-mail'
+    | '/forgot-password'
+    | '/login'
+    | '/registration'
+    | '/crm/bookings'
+    | '/crm/communication'
+    | '/crm/insights'
+    | '/crm/leads'
+    | '/crm/segments'
+    | '/crm/tasks'
+    | '/crm/bookings/new/$leadId'
+    | '/crm/communication/new/$leadId'
+    | '/crm/leads/$id/edit'
+    | '/crm/tasks/new/$leadId'
+  id:
+    | '__root__'
+    | '/'
+    | '/_auth'
+    | '/crm/dashboard'
+    | '/crm/'
+    | '/crm/bookings/new'
+    | '/crm/communication/new'
+    | '/crm/leads/$id'
+    | '/crm/leads/new'
+    | '/crm/tasks/new'
+    | '/_auth/confirm-mail/'
+    | '/_auth/forgot-password/'
+    | '/_auth/login/'
+    | '/_auth/registration/'
+    | '/crm/bookings/'
+    | '/crm/communication/'
+    | '/crm/insights/'
+    | '/crm/leads/'
+    | '/crm/segments/'
+    | '/crm/tasks/'
+    | '/crm/bookings/new/$leadId'
+    | '/crm/communication/new/$leadId'
+    | '/crm/leads/$id/edit'
+    | '/crm/tasks/new/$leadId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthRoute: typeof AuthRouteWithChildren
+  CrmDashboardRoute: typeof CrmDashboardRoute
+  CrmIndexRoute: typeof CrmIndexRoute
+  CrmBookingsNewRoute: typeof CrmBookingsNewRouteWithChildren
+  CrmCommunicationNewRoute: typeof CrmCommunicationNewRouteWithChildren
+  CrmLeadsIdRoute: typeof CrmLeadsIdRouteWithChildren
+  CrmLeadsNewRoute: typeof CrmLeadsNewRoute
+  CrmTasksNewRoute: typeof CrmTasksNewRouteWithChildren
+  CrmBookingsIndexRoute: typeof CrmBookingsIndexRoute
+  CrmCommunicationIndexRoute: typeof CrmCommunicationIndexRoute
+  CrmInsightsIndexRoute: typeof CrmInsightsIndexRoute
+  CrmLeadsIndexRoute: typeof CrmLeadsIndexRoute
+  CrmSegmentsIndexRoute: typeof CrmSegmentsIndexRoute
+  CrmTasksIndexRoute: typeof CrmTasksIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/_auth': {
+      id: '/_auth'
+      path: ''
+      fullPath: ''
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,11 +333,235 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/crm/': {
+      id: '/crm/'
+      path: '/crm'
+      fullPath: '/crm'
+      preLoaderRoute: typeof CrmIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/crm/dashboard': {
+      id: '/crm/dashboard'
+      path: '/crm/dashboard'
+      fullPath: '/crm/dashboard'
+      preLoaderRoute: typeof CrmDashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/crm/tasks/': {
+      id: '/crm/tasks/'
+      path: '/crm/tasks'
+      fullPath: '/crm/tasks'
+      preLoaderRoute: typeof CrmTasksIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/crm/segments/': {
+      id: '/crm/segments/'
+      path: '/crm/segments'
+      fullPath: '/crm/segments'
+      preLoaderRoute: typeof CrmSegmentsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/crm/leads/': {
+      id: '/crm/leads/'
+      path: '/crm/leads'
+      fullPath: '/crm/leads'
+      preLoaderRoute: typeof CrmLeadsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/crm/insights/': {
+      id: '/crm/insights/'
+      path: '/crm/insights'
+      fullPath: '/crm/insights'
+      preLoaderRoute: typeof CrmInsightsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/crm/communication/': {
+      id: '/crm/communication/'
+      path: '/crm/communication'
+      fullPath: '/crm/communication'
+      preLoaderRoute: typeof CrmCommunicationIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/crm/bookings/': {
+      id: '/crm/bookings/'
+      path: '/crm/bookings'
+      fullPath: '/crm/bookings'
+      preLoaderRoute: typeof CrmBookingsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_auth/registration/': {
+      id: '/_auth/registration/'
+      path: '/registration'
+      fullPath: '/registration'
+      preLoaderRoute: typeof AuthRegistrationIndexRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/login/': {
+      id: '/_auth/login/'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof AuthLoginIndexRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/forgot-password/': {
+      id: '/_auth/forgot-password/'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof AuthForgotPasswordIndexRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/confirm-mail/': {
+      id: '/_auth/confirm-mail/'
+      path: '/confirm-mail'
+      fullPath: '/confirm-mail'
+      preLoaderRoute: typeof AuthConfirmMailIndexRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/crm/tasks/new': {
+      id: '/crm/tasks/new'
+      path: '/crm/tasks/new'
+      fullPath: '/crm/tasks/new'
+      preLoaderRoute: typeof CrmTasksNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/crm/leads/new': {
+      id: '/crm/leads/new'
+      path: '/crm/leads/new'
+      fullPath: '/crm/leads/new'
+      preLoaderRoute: typeof CrmLeadsNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/crm/leads/$id': {
+      id: '/crm/leads/$id'
+      path: '/crm/leads/$id'
+      fullPath: '/crm/leads/$id'
+      preLoaderRoute: typeof CrmLeadsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/crm/communication/new': {
+      id: '/crm/communication/new'
+      path: '/crm/communication/new'
+      fullPath: '/crm/communication/new'
+      preLoaderRoute: typeof CrmCommunicationNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/crm/bookings/new': {
+      id: '/crm/bookings/new'
+      path: '/crm/bookings/new'
+      fullPath: '/crm/bookings/new'
+      preLoaderRoute: typeof CrmBookingsNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/crm/tasks/new/$leadId': {
+      id: '/crm/tasks/new/$leadId'
+      path: '/$leadId'
+      fullPath: '/crm/tasks/new/$leadId'
+      preLoaderRoute: typeof CrmTasksNewLeadIdRouteImport
+      parentRoute: typeof CrmTasksNewRoute
+    }
+    '/crm/leads/$id/edit': {
+      id: '/crm/leads/$id/edit'
+      path: '/edit'
+      fullPath: '/crm/leads/$id/edit'
+      preLoaderRoute: typeof CrmLeadsIdEditRouteImport
+      parentRoute: typeof CrmLeadsIdRoute
+    }
+    '/crm/communication/new/$leadId': {
+      id: '/crm/communication/new/$leadId'
+      path: '/$leadId'
+      fullPath: '/crm/communication/new/$leadId'
+      preLoaderRoute: typeof CrmCommunicationNewLeadIdRouteImport
+      parentRoute: typeof CrmCommunicationNewRoute
+    }
+    '/crm/bookings/new/$leadId': {
+      id: '/crm/bookings/new/$leadId'
+      path: '/$leadId'
+      fullPath: '/crm/bookings/new/$leadId'
+      preLoaderRoute: typeof CrmBookingsNewLeadIdRouteImport
+      parentRoute: typeof CrmBookingsNewRoute
+    }
   }
 }
 
+interface AuthRouteChildren {
+  AuthConfirmMailIndexRoute: typeof AuthConfirmMailIndexRoute
+  AuthForgotPasswordIndexRoute: typeof AuthForgotPasswordIndexRoute
+  AuthLoginIndexRoute: typeof AuthLoginIndexRoute
+  AuthRegistrationIndexRoute: typeof AuthRegistrationIndexRoute
+}
+
+const AuthRouteChildren: AuthRouteChildren = {
+  AuthConfirmMailIndexRoute: AuthConfirmMailIndexRoute,
+  AuthForgotPasswordIndexRoute: AuthForgotPasswordIndexRoute,
+  AuthLoginIndexRoute: AuthLoginIndexRoute,
+  AuthRegistrationIndexRoute: AuthRegistrationIndexRoute,
+}
+
+const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
+
+interface CrmBookingsNewRouteChildren {
+  CrmBookingsNewLeadIdRoute: typeof CrmBookingsNewLeadIdRoute
+}
+
+const CrmBookingsNewRouteChildren: CrmBookingsNewRouteChildren = {
+  CrmBookingsNewLeadIdRoute: CrmBookingsNewLeadIdRoute,
+}
+
+const CrmBookingsNewRouteWithChildren = CrmBookingsNewRoute._addFileChildren(
+  CrmBookingsNewRouteChildren,
+)
+
+interface CrmCommunicationNewRouteChildren {
+  CrmCommunicationNewLeadIdRoute: typeof CrmCommunicationNewLeadIdRoute
+}
+
+const CrmCommunicationNewRouteChildren: CrmCommunicationNewRouteChildren = {
+  CrmCommunicationNewLeadIdRoute: CrmCommunicationNewLeadIdRoute,
+}
+
+const CrmCommunicationNewRouteWithChildren =
+  CrmCommunicationNewRoute._addFileChildren(CrmCommunicationNewRouteChildren)
+
+interface CrmLeadsIdRouteChildren {
+  CrmLeadsIdEditRoute: typeof CrmLeadsIdEditRoute
+}
+
+const CrmLeadsIdRouteChildren: CrmLeadsIdRouteChildren = {
+  CrmLeadsIdEditRoute: CrmLeadsIdEditRoute,
+}
+
+const CrmLeadsIdRouteWithChildren = CrmLeadsIdRoute._addFileChildren(
+  CrmLeadsIdRouteChildren,
+)
+
+interface CrmTasksNewRouteChildren {
+  CrmTasksNewLeadIdRoute: typeof CrmTasksNewLeadIdRoute
+}
+
+const CrmTasksNewRouteChildren: CrmTasksNewRouteChildren = {
+  CrmTasksNewLeadIdRoute: CrmTasksNewLeadIdRoute,
+}
+
+const CrmTasksNewRouteWithChildren = CrmTasksNewRoute._addFileChildren(
+  CrmTasksNewRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthRoute: AuthRouteWithChildren,
+  CrmDashboardRoute: CrmDashboardRoute,
+  CrmIndexRoute: CrmIndexRoute,
+  CrmBookingsNewRoute: CrmBookingsNewRouteWithChildren,
+  CrmCommunicationNewRoute: CrmCommunicationNewRouteWithChildren,
+  CrmLeadsIdRoute: CrmLeadsIdRouteWithChildren,
+  CrmLeadsNewRoute: CrmLeadsNewRoute,
+  CrmTasksNewRoute: CrmTasksNewRouteWithChildren,
+  CrmBookingsIndexRoute: CrmBookingsIndexRoute,
+  CrmCommunicationIndexRoute: CrmCommunicationIndexRoute,
+  CrmInsightsIndexRoute: CrmInsightsIndexRoute,
+  CrmLeadsIndexRoute: CrmLeadsIndexRoute,
+  CrmSegmentsIndexRoute: CrmSegmentsIndexRoute,
+  CrmTasksIndexRoute: CrmTasksIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -16,7 +16,6 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
   static getDerivedStateFromError() {
     return { hasError: true };
   }
-  
   componentDidCatch(error: unknown, info: unknown) {
     // You can log error info here
     // console.error(error, info);

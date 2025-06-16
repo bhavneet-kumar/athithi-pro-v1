@@ -1,6 +1,5 @@
-import { Users, Filter, MoreHorizontal, Tag, Calendar } from 'lucide-react';
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Calendar, Filter, Tag, Users } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -21,7 +20,6 @@ import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
-  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -35,14 +33,14 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { toast } from '@/hooks/use-toast';
 import { generateCohorts } from '@/lib/ai/generateCohorts';
 import { useCrmStore } from '@/lib/store';
 import type { LeadCohort } from '@/types/crm';
+import { useNavigate } from '@tanstack/react-router';
 
 const SegmentsPage: React.FC = () => {
   const navigate = useNavigate();
-  const { leads, isOffline } = useCrmStore();
+  const { leads } = useCrmStore();
   const [cohorts, setCohorts] = useState<LeadCohort[]>([]);
   const [activeCohort, setActiveCohort] = useState<LeadCohort | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -391,7 +389,7 @@ const SegmentsPage: React.FC = () => {
                                   variant='ghost'
                                   size='sm'
                                   onClick={() =>
-                                    navigate(`/crm/leads/${lead.id}`)
+                                    navigate({ to: `/crm/leads/${lead.id}` })
                                   }
                                 >
                                   View

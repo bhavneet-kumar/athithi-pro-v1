@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowLeft, Save, X } from 'lucide-react';
 import React from 'react';
 import { useForm } from 'react-hook-form';
-import { useNavigate, useParams } from 'react-router-dom';
+
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
 
@@ -29,6 +29,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
+import { useNavigate, useParams } from '@tanstack/react-router';
 
 const taskFormSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -43,7 +44,7 @@ const taskFormSchema = z.object({
 type TaskFormValues = z.infer<typeof taskFormSchema>;
 
 const TaskFormPage: React.FC = () => {
-  const { leadId } = useParams<{ leadId: string }>();
+  const { leadId } = useParams({ from: '/crm/tasks/$leadId' });
   const navigate = useNavigate();
   const { leads, tasks, addTask, isOffline } = useCrmStore();
 
@@ -99,9 +100,9 @@ const TaskFormPage: React.FC = () => {
       });
 
       if (data.leadId) {
-        navigate(`/crm/leads/${data.leadId}`);
+        navigate({ to: `/crm/leads/${data.leadId}` });
       } else {
-        navigate('/crm/tasks');
+        navigate({ to: '/crm/tasks' });
       }
     } catch (error) {
       toast({
@@ -121,7 +122,9 @@ const TaskFormPage: React.FC = () => {
             variant='ghost'
             size='sm'
             onClick={() =>
-              navigate(leadId ? `/crm/leads/${leadId}` : '/crm/tasks')
+              navigate({
+                to: leadId ? `/crm/leads/${leadId}` : '/crm/tasks',
+              })
             }
             className='mr-2'
           >
@@ -309,7 +312,9 @@ const TaskFormPage: React.FC = () => {
               type='button'
               variant='outline'
               onClick={() =>
-                navigate(leadId ? `/crm/leads/${leadId}` : '/crm/tasks')
+                navigate({
+                  to: leadId ? `/crm/leads/${leadId}` : '/crm/tasks',
+                })
               }
             >
               <X className='mr-2 h-4 w-4' /> Cancel

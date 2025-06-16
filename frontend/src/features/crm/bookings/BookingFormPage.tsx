@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowLeft, Save, X, Plus, Trash2 } from 'lucide-react';
 import React from 'react';
 import { useForm } from 'react-hook-form';
-import { useNavigate, useParams } from 'react-router-dom';
+
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
 
@@ -27,6 +27,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
 import { useCrmStore } from '@/lib/store';
+import { useNavigate, useParams } from '@tanstack/react-router';
 
 // Form schema
 const bookingFormSchema = z.object({
@@ -52,7 +53,7 @@ type BookingFormValues = z.infer<typeof bookingFormSchema>;
 type PaymentStage = z.infer<typeof paymentStageSchema>;
 
 const BookingFormPage: React.FC = () => {
-  const { leadId } = useParams<{ leadId: string }>();
+  const { leadId } = useParams({ from: '/crm/bookings/new/$leadId' });
   const navigate = useNavigate();
   const { leads, addBooking, isOffline } = useCrmStore();
   const [paymentStages, setPaymentStages] = React.useState<PaymentStage[]>([
@@ -172,7 +173,7 @@ const BookingFormPage: React.FC = () => {
         description: `Booking has been successfully created.`,
       });
 
-      navigate(`/crm/leads/${data.leadId}`);
+      navigate({ to: `/crm/leads/${data.leadId}` });
     } catch (error) {
       toast({
         title: 'Error',
@@ -192,7 +193,9 @@ const BookingFormPage: React.FC = () => {
             variant='ghost'
             size='sm'
             onClick={() =>
-              navigate(leadId ? `/crm/leads/${leadId}` : '/crm/bookings')
+              navigate({
+                to: leadId ? `/crm/leads/${leadId}` : '/crm/bookings',
+              })
             }
             className='mr-2'
           >
@@ -461,7 +464,9 @@ const BookingFormPage: React.FC = () => {
               type='button'
               variant='outline'
               onClick={() =>
-                navigate(leadId ? `/crm/leads/${leadId}` : '/crm/bookings')
+                navigate({
+                  to: leadId ? `/crm/leads/${leadId}` : '/crm/bookings',
+                })
               }
             >
               <X className='mr-2 h-4 w-4' /> Cancel

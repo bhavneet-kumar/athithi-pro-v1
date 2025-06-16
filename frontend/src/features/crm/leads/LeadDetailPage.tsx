@@ -1,37 +1,33 @@
 import { format, isValid, parseISO } from 'date-fns';
 import {
-  User,
-  Phone,
-  Mail,
+  ArrowLeft,
+  BadgeIndianRupee,
   Calendar,
-  Tag,
+  ClipboardList,
+  Clock,
   DollarSign,
   Edit,
-  Trash2,
-  MessageSquare,
-  ClipboardList,
   FileCheck,
-  ArrowLeft,
-  Clock,
+  Mail,
+  MessageSquare,
+  Phone,
   RefreshCw,
-  BarChart2,
-  BadgeIndianRupee,
+  Tag,
+  Trash2,
+  User,
 } from 'lucide-react';
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useParams } from '@tanstack/react-router';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useCurrency } from '@/hooks/useCurrency';
 import { useLeadSuggestions } from '@/hooks/useLeadSuggestions';
-import { getLeadSuggestions } from '@/lib/ai/getLeadSuggestions';
 import { useCrmStore } from '@/lib/store';
 
-import { LeadStatus, LeadSuggestion } from '@/types/crm';
 import { toast } from '@/hooks/use-toast';
+import { LeadStatus } from '@/types/crm';
 
 // Helper function to safely format dates
 const safeFormat = (
@@ -55,7 +51,9 @@ const safeFormat = (
 };
 
 const LeadDetailPage: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+  const { id } = useParams({
+    from: '/crm/leads/$id',
+  });
   const navigate = useNavigate();
   const {
     leads,
@@ -104,7 +102,7 @@ const LeadDetailPage: React.FC = () => {
         <p className='text-muted-foreground mt-2'>
           The lead you're looking for doesn't exist.
         </p>
-        <Button className='mt-4' onClick={() => navigate('/crm/leads')}>
+        <Button className='mt-4' onClick={() => navigate({ to: '/crm/leads' })}>
           <ArrowLeft className='mr-2 h-4 w-4' />
           Back to Leads
         </Button>
@@ -140,7 +138,7 @@ const LeadDetailPage: React.FC = () => {
     }
 
     deleteLead(lead.id);
-    navigate('/crm/leads');
+    navigate({ to: '/crm/leads' });
     toast({
       title: 'Lead Deleted',
       description: 'The lead has been successfully deleted.',
@@ -250,7 +248,7 @@ const LeadDetailPage: React.FC = () => {
           <Button
             variant='ghost'
             size='sm'
-            onClick={() => navigate('/crm/leads')}
+            onClick={() => navigate({ to: '/crm/leads' })}
             className='mr-2'
           >
             <ArrowLeft className='h-4 w-4 mr-1' />
@@ -273,7 +271,9 @@ const LeadDetailPage: React.FC = () => {
         <div className='flex gap-2'>
           <Button
             variant='outline'
-            onClick={() => navigate(`/crm/communication/new/${lead.id}`)}
+            onClick={() =>
+              navigate({ to: `/crm/communication/new/${lead.id}` })
+            }
             disabled={isOffline}
           >
             <MessageSquare className='mr-2 h-4 w-4' />
@@ -281,7 +281,7 @@ const LeadDetailPage: React.FC = () => {
           </Button>
           <Button
             variant='outline'
-            onClick={() => navigate(`/crm/tasks/new/${lead.id}`)}
+            onClick={() => navigate({ to: `/crm/tasks/new/${lead.id}` })}
             disabled={isOffline}
           >
             <ClipboardList className='mr-2 h-4 w-4' />
@@ -289,14 +289,14 @@ const LeadDetailPage: React.FC = () => {
           </Button>
           <Button
             variant='outline'
-            onClick={() => navigate(`/crm/bookings/new/${lead.id}`)}
+            onClick={() => navigate({ to: `/crm/bookings/new/${lead.id}` })}
             disabled={isOffline}
           >
             <FileCheck className='mr-2 h-4 w-4' />
             Create Booking
           </Button>
           <Button
-            onClick={() => navigate(`/crm/leads/${lead.id}/edit`)}
+            onClick={() => navigate({ to: `/crm/leads/${lead.id}/edit` })}
             disabled={isOffline}
           >
             <Edit className='mr-2 h-4 w-4' />

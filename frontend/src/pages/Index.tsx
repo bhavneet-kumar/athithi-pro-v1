@@ -1,5 +1,3 @@
-import { useNavigate } from 'react-router-dom';
-
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -9,6 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { useNavigate } from '@tanstack/react-router';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -28,7 +27,7 @@ const Index = () => {
             <Button
               size='lg'
               className='bg-crm-primary hover:bg-crm-secondary'
-              onClick={() => navigate('/crm')}
+              onClick={() => navigate({ to: '/crm' })}
             >
               Launch CRM
             </Button>
@@ -53,7 +52,10 @@ const Index = () => {
               </p>
             </CardContent>
             <CardFooter>
-              <Button variant='link' onClick={() => navigate('/crm/leads')}>
+              <Button
+                variant='link'
+                onClick={() => navigate({ to: '/crm/leads' })}
+              >
                 View Leads
               </Button>
             </CardFooter>
@@ -75,7 +77,7 @@ const Index = () => {
             <CardFooter>
               <Button
                 variant='link'
-                onClick={() => navigate('/crm/communication')}
+                onClick={() => navigate({ to: '/crm/communication' })}
               >
                 Open Hub
               </Button>
@@ -94,7 +96,10 @@ const Index = () => {
               </p>
             </CardContent>
             <CardFooter>
-              <Button variant='link' onClick={() => navigate('/crm/tasks')}>
+              <Button
+                variant='link'
+                onClick={() => navigate({ to: '/crm/tasks' })}
+              >
                 Manage Tasks
               </Button>
             </CardFooter>
@@ -112,7 +117,10 @@ const Index = () => {
               </p>
             </CardContent>
             <CardFooter>
-              <Button variant='link' onClick={() => navigate('/crm/insights')}>
+              <Button
+                variant='link'
+                onClick={() => navigate({ to: '/crm/insights' })}
+              >
                 View Insights
               </Button>
             </CardFooter>
@@ -128,7 +136,7 @@ const Index = () => {
           </p>
           <Button
             className='mt-6 bg-crm-primary hover:bg-crm-secondary'
-            onClick={() => navigate('/crm')}
+            onClick={() => navigate({ to: '/crm' })}
           >
             Get Started
           </Button>

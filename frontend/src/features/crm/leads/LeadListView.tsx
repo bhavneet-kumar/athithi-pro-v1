@@ -1,7 +1,7 @@
 import { format } from 'date-fns';
 import { MoreHorizontal, ArrowRight } from 'lucide-react';
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@tanstack/react-router';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -78,7 +78,7 @@ const LeadListView: React.FC<LeadListViewProps> = ({ leads }) => {
             <TableRow
               key={lead.id}
               className='cursor-pointer hover:bg-muted/50'
-              onClick={() => navigate(`/crm/leads/${lead.id}`)}
+              onClick={() => navigate({ to: `/crm/leads/${lead.id}` })}
             >
               <TableCell className='font-medium'>{lead.name}</TableCell>
               <TableCell>
@@ -141,7 +141,7 @@ const LeadListView: React.FC<LeadListViewProps> = ({ leads }) => {
                     <DropdownMenuItem
                       onClick={e => {
                         e.stopPropagation();
-                        navigate(`/crm/leads/${lead.id}`);
+                        navigate({ to: `/crm/leads/${lead.id}` });
                       }}
                     >
                       <ArrowRight className='mr-2 h-4 w-4' />

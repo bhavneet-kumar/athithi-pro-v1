@@ -1,119 +1,16 @@
-import { Request, Response, NextFunction } from 'express';
-
-import { BadRequestError, CustomError } from '../../shared/utils/CustomError';
-
 import { agencyService } from './agency.service';
+import { Request, Response, NextFunction } from 'express';
+import { BadRequestError } from '../../shared/utils/CustomError';
+import { BaseController } from '../../controllers/base.controller';
 
 /**
  * Agency Controller Class
  * Implements controller layer with proper error handling and response formatting
  * Follows OOP principles and uses validation middleware for data validation
  */
-export class AgencyController {
-  /**
-   * Create a new agency
-   * Validation is handled by middleware
-   */
-  async createAgency(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-      const agency = await agencyService.createAgency(req.body);
-      res.status(201).json({
-        success: true,
-        message: 'Agency created successfully',
-        data: {
-          id: agency.id,
-          name: agency.name,
-          code: agency.code,
-          domain: agency.domain,
-          isActive: agency.isActive,
-          settings: agency.settings,
-        },
-      });
-    } catch (error) {
-      next(error);
-    }
-  }
-
-  /**
-   * Get agency by ID
-   */
-  async getAgency(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-      const { agencyId } = req.params;
-
-      if (!agencyId) {
-        throw new BadRequestError('Agency ID is required');
-      }
-
-      const agency = await agencyService.getAgencyById(agencyId);
-      res.json({
-        success: true,
-        data: {
-          id: agency.id,
-          name: agency.name,
-          code: agency.code,
-          domain: agency.domain,
-          isActive: agency.isActive,
-          settings: agency.settings,
-        },
-      });
-    } catch (error) {
-      next(error);
-    }
-  }
-
-  /**
-   * Update agency
-   * Validation is handled by middleware
-   */
-  async updateAgency(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-      const { agencyId } = req.params;
-
-      if (!agencyId) {
-        throw new BadRequestError('Agency ID is required');
-      }
-
-      const agency = await agencyService.updateAgency(agencyId, req.body);
-      res.json({
-        success: true,
-        message: 'Agency updated successfully',
-        data: {
-          id: agency.id,
-          name: agency.name,
-          code: agency.code,
-          domain: agency.domain,
-          isActive: agency.isActive,
-          settings: agency.settings,
-        },
-      });
-    } catch (error) {
-      next(error);
-    }
-  }
-
-  /**
-   * Delete agency
-   */
-  async deleteAgency(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-      const { agencyId } = req.params;
-
-      if (!agencyId) {
-        throw new BadRequestError('Agency ID is required');
-      }
-
-      await agencyService.deleteAgency(agencyId);
-      res.status(204).json({
-        success: true,
-        message: 'Agency deleted successfully',
-      });
-    } catch (error) {
-      if (error instanceof CustomError) {
-        throw error;
-      }
-      next(error);
-    }
+export class AgencyController extends BaseController<any> {
+  constructor() {
+    super(agencyService);
   }
 
   /**

@@ -64,7 +64,7 @@ router.post(
   passport.authenticate('jwt', { session: false }),
   checkPermission('agencies', 'create'),
   validateBody(createAgencySchema),
-  agencyController.createAgency,
+  agencyController.create.bind(agencyController),
 );
 
 /**
@@ -144,7 +144,7 @@ router.get(
   passport.authenticate('jwt', { session: false }),
   checkPermission('agencies', 'read'),
   validateParams(agencyIdParamSchema),
-  agencyController.getAgency,
+  agencyController.getById.bind(agencyController),
 );
 
 /**
@@ -219,7 +219,7 @@ router.put(
   checkPermission('agencies', 'update'),
   validateParams(agencyIdParamSchema),
   validateBody(updateAgencySchema),
-  agencyController.updateAgency,
+  agencyController.update.bind(agencyController),
 );
 
 /**
@@ -297,7 +297,7 @@ router.delete(
   passport.authenticate('jwt', { session: false }),
   checkPermission('agencies', 'delete'),
   validateParams(agencyIdParamSchema),
-  agencyController.deleteAgency,
+  agencyController.delete.bind(agencyController),
 );
 
 export default router;

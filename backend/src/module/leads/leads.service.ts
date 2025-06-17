@@ -18,7 +18,7 @@ export class LeadsService extends BaseService<ILead> {
      * @param data - Agency creation data
      * @returns Created agency
      */
-    async createLeads(data: ILeadCreate): Promise<ILead> {
+    async create(data: ILeadCreate): Promise<ILead> {
       try {  
         // Create the lead - use model directly to avoid interface conflicts
         const lead = new Lead(data);
@@ -36,7 +36,7 @@ export class LeadsService extends BaseService<ILead> {
      * Get all leads
      * @returns Leads document
      */
-    async getAllLeads(id: string): Promise<ILead[]> {
+    async getAll(): Promise<ILead[]> {
       try {
         return await this.find();
       } catch (error: any) {
@@ -52,7 +52,7 @@ export class LeadsService extends BaseService<ILead> {
      * @param id - Lead ID
      * @returns Leads document
      */
-    async getLeadById(id: string): Promise<ILead> {
+    async getEntityById(id: string): Promise<ILead> {
       try {
         if (!id) {
           throw new BadRequestError('Lead ID is required');
@@ -76,7 +76,7 @@ export class LeadsService extends BaseService<ILead> {
      * @param id - Lead ID
      * @param updatedData - Partial Lead Data Object
      */
-    async findByIdAndUpdate(id: string, updatedData: Partial<ILead>): Promise<ILead> {
+    async updateEntity(id: string, updatedData: Partial<ILead>): Promise<ILead> {
       try {
         if (!id) {
           throw new BadRequestError('Lead ID is required');
@@ -105,7 +105,7 @@ export class LeadsService extends BaseService<ILead> {
      * @param id - Lead ID
      * @returns Leads document
      */
-    async deleteLeadById(id: string): Promise<ILead> {
+    async deleteEntityById(id: string): Promise<ILead> {
       try {
         if (!id) {
           throw new BadRequestError('Lead ID is required');

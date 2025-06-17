@@ -1,16 +1,16 @@
-import { Agency } from '../../shared/models/agency.model';
-import { BaseService } from '../../shared/services/BaseService';
 import {
-  BadRequestError,
+  CustomError,
   NotFoundError,
   BusinessError,
+  BadRequestError,
   InternalServerError,
-  CustomError,
 } from '../../shared/utils/CustomError';
 
 import { IAgency } from './agency.interface';
-import { CreateAgencyInput, UpdateAgencyInput } from './agency.validator';
 import { agencyRoleService } from './agencyRole.service';
+import { Agency } from '../../shared/models/agency.model';
+import { BaseService } from '../../shared/services/BaseService';
+import { CreateAgencyInput, UpdateAgencyInput } from './agency.validator';
 
 /**
  * Agency Service Class
@@ -27,7 +27,7 @@ export class AgencyService extends BaseService<IAgency> {
    * @param data - Agency creation data
    * @returns Created agency
    */
-  async createAgency(data: CreateAgencyInput): Promise<IAgency> {
+  async create(data: CreateAgencyInput): Promise<IAgency> {
     try {
       // Validate unique agency code
       const existingAgency = await this.findOne({ code: data.code });
@@ -62,7 +62,7 @@ export class AgencyService extends BaseService<IAgency> {
    * @param id - Agency ID
    * @returns Agency document
    */
-  async getAgencyById(id: string): Promise<IAgency> {
+  async getEntityById(id: string): Promise<IAgency> {
     try {
       if (!id) {
         throw new BadRequestError('Agency ID is required');
@@ -87,7 +87,7 @@ export class AgencyService extends BaseService<IAgency> {
    * @param data - Update data
    * @returns Updated agency
    */
-  async updateAgency(id: string, data: UpdateAgencyInput): Promise<IAgency> {
+  async updateEntity(id: string, data: UpdateAgencyInput): Promise<IAgency> {
     try {
       if (!id) {
         throw new BadRequestError('Agency ID is required');
@@ -138,7 +138,7 @@ export class AgencyService extends BaseService<IAgency> {
    * Delete agency with cascade operations
    * @param id - Agency ID
    */
-  async deleteAgency(id: string): Promise<void> {
+  async deleteEntityById(id: string): Promise<void> {
     try {
       if (!id) {
         throw new BadRequestError('Agency ID is required');

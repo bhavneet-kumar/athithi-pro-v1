@@ -9,7 +9,7 @@ declare module 'express-serve-static-core' {
   }
 
   interface Request {
-    user: {
+    user?: {
       agency: string;
       role: {
         type: UserRole;

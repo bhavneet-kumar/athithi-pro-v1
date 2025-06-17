@@ -240,6 +240,20 @@ const leadSchema = new Schema<ILead>(
   },
 );
 
+// Add a text index for search functionality
+leadSchema.index({
+  fullName: 'text',
+  email: 'text',
+  phone: 'text',
+  // company: 'text',
+  // 'address.street': 'text',
+  // 'address.city': 'text',
+  // 'address.state': 'text',
+  // 'address.country': 'text',
+  tags: 'text',
+  notes: 'text',
+});
+
 // Compound index to ensure unique lead number per agency
 leadSchema.index({ agencyId: 1, leadNumber: 1 }, { unique: true });
 

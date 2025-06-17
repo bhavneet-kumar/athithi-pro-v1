@@ -80,7 +80,7 @@ const objectIdSchema = z.string().regex(/^[\dA-Fa-f]{24}$/, 'Invalid ObjectId fo
 
 export const leadValidator = {
   createSchema: z.object({
-    agencyId: objectIdSchema,
+    agencyId: objectIdSchema.optional(),
     leadNumber: z.string().min(1, 'Lead number is required'),
     fullName: z.string().min(1, 'Full name is required'),
     email: z.string().email('Invalid email format'),
@@ -115,7 +115,7 @@ export const leadValidator = {
   }),
 
   updateSchema: z.object({
-    agencyId: objectIdSchema,
+    agencyId: objectIdSchema.optional(),
     fullName: z.string().min(1, 'Full name is required').optional(),
     email: z.string().email('Invalid email format').optional(),
     phone: z.string().min(1, 'Phone number is required').optional(),
@@ -145,7 +145,7 @@ export const leadValidator = {
   }),
 
   filterSchema: z.object({
-    agencyId: objectIdSchema,
+    agencyId: objectIdSchema.optional(),
     search: z.string().optional(),
     status: z.nativeEnum(LeadStatus).optional(),
     source: z.nativeEnum(LeadSource).optional(),

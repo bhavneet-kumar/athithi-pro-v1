@@ -35,17 +35,15 @@ export class LeadService extends BaseService<ILead> {
     }
   }
 
-  async getAll(query: ILeadFilter): Promise<{ data: ILead[]; total: number }> {
+  async getAll(query: ILeadFilter, agencyId: string): Promise<{ data: ILead[]; total: number }> {
     try {
-      if (!query.agencyId) {
-        throw new BadRequestError('Agency ID is required');
-      }
       const { limit, page, ...filterQuery } = query;
       const skip = (page - 1) * limit;
+      const searchQuery = query.search ? { $text: { $search: query.search as string } } : {};
 
       const [data, total] = await Promise.all([
         this.model
-          .find(filterQuery)
+          .find({ ...filterQuery, ...searchQuery, agencyId })
           .select('fullName email status phone alternatePhone createdAt updatedAt source aiScore.value')
           .skip(skip)
           .limit(limit)
@@ -65,13 +63,10 @@ export class LeadService extends BaseService<ILead> {
     }
   }
 
-  async getById(id: string, query: ILeadFilter): Promise<ILead> {
+  async getById(id: string, agencyId: string): Promise<ILead> {
     try {
-      if (!query.agencyId) {
-        throw new BadRequestError('Agency ID is required');
-      }
       const lead = await this.model
-        .findOne({ _id: id, agencyId: query.agencyId })
+        .findOne({ _id: id, agencyId })
         .lean({ virtuals: true }) // ← The magic performance booster!
         .exec();
 
@@ -97,6 +92,7 @@ export class LeadService extends BaseService<ILead> {
 
       const updateData = {
         ...restData,
+        agencyId,
         $set: {
           'aiScore.value': Number(aiScoreCalculator.calculateScore(data as ILead)),
           'aiScore.lastCalculated': new Date(),

@@ -1,6 +1,6 @@
 # AthithiPro Leads CRM
 
-A comprehensive Customer Relationship Management (CRM) system built with Node.js, TypeScript, and Express.js, designed for managing leads and agencies with robust authentication, role-based access control, and multi-tenant architecture.
+A comprehensive Customer Relationship Management (CRM) system built with Node.js, TypeScript, and Express.js, designed for managing leads and agencies with robust authentication, role-based access control,and multi-tenant architecture.
 
 ## 🚀 Features
 

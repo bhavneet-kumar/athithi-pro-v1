@@ -1,12 +1,7 @@
-import {
-    CustomError,
-    NotFoundError,
-  BadRequestError,
-  InternalServerError,
-} from '../../shared/utils/CustomError';
-import { CreateLeadInput, ILead } from './leads.interface';
-import { Lead } from '../../shared/models/leads.model';
+import { ILeadCreate, ILeadFilter } from './leads.interface';
+import { ILead, Lead } from '../../shared/models/leads.model';
 import { BaseService } from '../../shared/services/BaseService';
+import { BadRequestError, CustomError, InternalServerError, NotFoundError } from '../../shared/utils/CustomError';
 
 /**
  * Leads Service Class
@@ -23,7 +18,7 @@ export class LeadsService extends BaseService<ILead> {
      * @param data - Agency creation data
      * @returns Created agency
      */
-    async createLeads(data: CreateLeadInput): Promise<ILead> {
+    async createLeads(data: ILeadCreate): Promise<ILead> {
       try {  
         // Create the lead - use model directly to avoid interface conflicts
         const lead = new Lead(data);

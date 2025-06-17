@@ -1,6 +1,7 @@
 import { Types } from 'mongoose';
 
 import { ILead } from '../../shared/models/lead.model';
+import { LeadSource, LeadStatus } from '../../types/enum/lead';
 
 export interface ILeadCreate extends ILead {
   agencyId: Types.ObjectId;
@@ -14,8 +15,8 @@ export interface ILeadUpdate extends Partial<ILeadCreate> {
 export interface ILeadFilter {
   agencyId: Types.ObjectId;
   search?: string;
-  status?: string;
-  source?: string;
+  status?: LeadStatus;
+  source?: LeadSource;
   priority?: string;
   assignedTo?: string;
   tags?: string[];
@@ -30,19 +31,12 @@ export interface ILeadFilter {
 export interface ILeadResponse {
   id: string;
   leadNumber: string;
-  firstName: string;
-  lastName: string;
+  fullName: string;
   email: string;
   phone: string;
   status: string;
   source: string;
   priority: string;
-  assignedTo?: {
-    id: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-  };
   createdAt: Date;
   updatedAt: Date;
 }

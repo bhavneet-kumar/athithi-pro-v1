@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { LeadSource, LeadStatus } from '../../types/enum/lead';
+
 const MAX_SCORE = 100;
 const MIN_SCORE = 0;
 
@@ -11,15 +13,18 @@ const addressSchema = z.object({
   pincode: z.string().min(1, 'Pincode is required'),
 });
 
-const travelersSchema = z.object({
-  adults: z.number().min(0, 'Adults count must be 0 or greater'),
-  children: z.number().min(0, 'Children count must be 0 or greater'),
-  infants: z.number().min(0, 'Infants count must be 0 or greater'),
-});
+const travelersSchema = z
+  .object({
+    adults: z.number().min(0, 'Adults count must be 0 or greater'),
+    children: z.number().min(0, 'Children count must be 0 or greater'),
+    infants: z.number().min(0, 'Infants count must be 0 or greater'),
+  })
+  .optional();
 
 const budgetSchema = z.object({
-  min: z.number().min(0, 'Minimum budget must be 0 or greater'),
-  max: z.number().min(0, 'Maximum budget must be 0 or greater'),
+  min: z.number().min(0, 'Minimum budget must be 0 or greater').optional(),
+  max: z.number().min(0, 'Maximum budget must be 0 or greater').optional(),
+  value: z.number().min(0, 'Budget value must be 0 or greater'),
   currency: z.string().min(1, 'Currency is required'),
 });
 
@@ -30,23 +35,27 @@ const preferencesSchema = z.object({
   specialRequests: z.string().optional(),
 });
 
-const travelDetailsSchema = z.object({
-  destination: z.string().min(1, 'Destination is required'),
-  departureDate: z.string().transform((str) => new Date(str)),
-  returnDate: z.string().transform((str) => new Date(str)),
-  travelers: travelersSchema,
-  budget: budgetSchema,
-  packageType: z.string().min(1, 'Package type is required'),
-  preferences: preferencesSchema,
-});
+const travelDetailsSchema = z
+  .object({
+    destination: z.string().min(1, 'Destination is required'),
+    departureDate: z.string().transform((str) => new Date(str)),
+    returnDate: z.string().transform((str) => new Date(str)),
+    travelers: travelersSchema,
+    budget: budgetSchema,
+    packageType: z.string().optional(),
+    preferences: preferencesSchema,
+  })
+  .optional();
 
-const aiScoreFactorsSchema = z.object({
-  budget: z.number().min(MIN_SCORE).max(MAX_SCORE),
-  timeline: z.number().min(MIN_SCORE).max(MAX_SCORE),
-  engagement: z.number().min(MIN_SCORE).max(MAX_SCORE),
-  profile: z.number().min(MIN_SCORE).max(MAX_SCORE),
-  behavior: z.number().min(MIN_SCORE).max(MAX_SCORE),
-});
+const aiScoreFactorsSchema = z
+  .object({
+    budget: z.number().min(MIN_SCORE).max(MAX_SCORE),
+    timeline: z.number().min(MIN_SCORE).max(MAX_SCORE),
+    engagement: z.number().min(MIN_SCORE).max(MAX_SCORE),
+    profile: z.number().min(MIN_SCORE).max(MAX_SCORE),
+    behavior: z.number().min(MIN_SCORE).max(MAX_SCORE),
+  })
+  .optional();
 
 const aiScoreSchema = z.object({
   value: z.number().min(MIN_SCORE).max(MAX_SCORE),
@@ -54,15 +63,17 @@ const aiScoreSchema = z.object({
   factors: aiScoreFactorsSchema,
 });
 
-const engagementSchema = z.object({
-  totalInteractions: z.number().min(0),
-  lastInteraction: z.string().transform((str) => new Date(str)),
-  emailOpens: z.number().min(0),
-  emailClicks: z.number().min(0),
-  websiteVisits: z.number().min(0),
-  callsReceived: z.number().min(0),
-  callsMade: z.number().min(0),
-});
+const engagementSchema = z
+  .object({
+    totalInteractions: z.number().min(0),
+    lastInteraction: z.string().transform((str) => new Date(str)),
+    emailOpens: z.number().min(0),
+    emailClicks: z.number().min(0),
+    websiteVisits: z.number().min(0),
+    callsReceived: z.number().min(0),
+    callsMade: z.number().min(0),
+  })
+  .optional();
 
 // MongoDB ObjectId validation
 const objectIdSchema = z.string().regex(/^[\dA-Fa-f]{24}$/, 'Invalid ObjectId format');
@@ -71,8 +82,7 @@ export const leadValidator = {
   createSchema: z.object({
     agencyId: objectIdSchema,
     leadNumber: z.string().min(1, 'Lead number is required'),
-    firstName: z.string().min(1, 'First name is required'),
-    lastName: z.string().min(1, 'Last name is required'),
+    fullName: z.string().min(1, 'Full name is required'),
     email: z.string().email('Invalid email format'),
     phone: z.string().min(1, 'Phone number is required'),
     alternatePhone: z.string().optional(),
@@ -84,13 +94,13 @@ export const leadValidator = {
     occupation: z.string().optional(),
     company: z.string().optional(),
     address: addressSchema.optional(),
-    status: z.string().min(1, 'Status is required'),
-    source: z.string().min(1, 'Source is required'),
-    priority: z.string().min(1, 'Priority is required'),
+    status: z.nativeEnum(LeadStatus),
+    source: z.nativeEnum(LeadSource),
+    priority: z.string().optional(),
     assignedTo: objectIdSchema.optional(),
-    travelDetails: travelDetailsSchema.optional(),
-    aiScore: aiScoreSchema.optional(),
-    engagement: engagementSchema.optional(),
+    travelDetails: travelDetailsSchema,
+    aiScore: aiScoreSchema,
+    engagement: engagementSchema,
     tags: z.array(z.string()).optional(),
     notes: z.string().optional(),
     nextFollowUp: z
@@ -105,8 +115,7 @@ export const leadValidator = {
   }),
 
   updateSchema: z.object({
-    firstName: z.string().min(1, 'First name is required').optional(),
-    lastName: z.string().min(1, 'Last name is required').optional(),
+    fullName: z.string().min(1, 'Full name is required').optional(),
     email: z.string().email('Invalid email format').optional(),
     phone: z.string().min(1, 'Phone number is required').optional(),
     alternatePhone: z.string().optional(),
@@ -118,13 +127,13 @@ export const leadValidator = {
     occupation: z.string().optional(),
     company: z.string().optional(),
     address: addressSchema.optional(),
-    status: z.string().min(1, 'Status is required').optional(),
-    source: z.string().min(1, 'Source is required').optional(),
-    priority: z.string().min(1, 'Priority is required').optional(),
+    status: z.nativeEnum(LeadStatus),
+    source: z.nativeEnum(LeadSource),
+    priority: z.string().optional(),
     assignedTo: objectIdSchema.optional(),
-    travelDetails: travelDetailsSchema.optional(),
+    travelDetails: travelDetailsSchema,
     aiScore: aiScoreSchema.optional(),
-    engagement: engagementSchema.optional(),
+    engagement: engagementSchema,
     tags: z.array(z.string()).optional(),
     notes: z.string().optional(),
     nextFollowUp: z
@@ -137,8 +146,8 @@ export const leadValidator = {
   filterSchema: z.object({
     agencyId: objectIdSchema,
     search: z.string().optional(),
-    status: z.string().optional(),
-    source: z.string().optional(),
+    status: z.nativeEnum(LeadStatus).optional(),
+    source: z.nativeEnum(LeadSource).optional(),
     priority: z.string().optional(),
     assignedTo: objectIdSchema.optional(),
     tags: z.array(z.string()).optional(),

@@ -1,10 +1,11 @@
 import { Schema, model, Document, Types } from 'mongoose';
 
+import { LeadStatus, LeadSource } from '../../types/enum/lead';
+
 export interface ILead extends Document {
   agencyId: Types.ObjectId;
   leadNumber: string;
-  firstName: string;
-  lastName: string;
+  fullName: string;
   email: string;
   phone: string;
   alternatePhone?: string;
@@ -19,36 +20,37 @@ export interface ILead extends Document {
     country: string;
     pincode: string;
   };
-  status: string;
-  source: string;
+  status: LeadStatus;
+  source: LeadSource;
   priority: string;
   assignedTo?: Types.ObjectId;
   travelDetails?: {
     destination: string;
     departureDate: Date;
     returnDate: Date;
-    travelers: {
+    travelers?: {
       adults: number;
       children: number;
       infants: number;
     };
     budget: {
-      min: number;
-      max: number;
+      min?: number;
+      max?: number;
+      value: number;
       currency: string;
     };
-    packageType: string;
+    packageType?: string;
     preferences: {
       accommodation: string;
-      transport: string;
-      mealPreference: string;
+      transport?: string;
+      mealPreference?: string;
       specialRequests: string;
     };
   };
-  aiScore?: {
+  aiScore: {
     value: number;
     lastCalculated: Date;
-    factors: {
+    factors?: {
       budget: number;
       timeline: number;
       engagement: number;
@@ -96,15 +98,10 @@ const leadSchema = new Schema<ILead>(
       required: true,
       unique: true,
     },
-    firstName: {
+    fullName: {
       type: String,
       required: true,
-      trim: true,
-    },
-    lastName: {
-      type: String,
-      required: true,
-      trim: true,
+      unique: true,
     },
     email: {
       type: String,
@@ -135,14 +132,16 @@ const leadSchema = new Schema<ILead>(
     status: {
       type: String,
       required: true,
+      enum: Object.values(LeadStatus),
     },
     source: {
       type: String,
       required: true,
+      enum: Object.values(LeadSource),
     },
     priority: {
       type: String,
-      required: true,
+      required: false,
     },
     assignedTo: {
       type: Schema.Types.ObjectId,

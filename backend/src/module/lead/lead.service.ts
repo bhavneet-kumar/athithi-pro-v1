@@ -1,3 +1,5 @@
+import { aiScoreCalculator } from 'shared/utils/aiScore';
+
 import { ILead, Lead } from '../../shared/models/lead.model';
 import { BaseService } from '../../shared/services/BaseService';
 import { BadRequestError, CustomError, InternalServerError, NotFoundError } from '../../shared/utils/CustomError';
@@ -14,6 +16,8 @@ export class LeadService extends BaseService<ILead> {
       if (!data.agencyId) {
         throw new BadRequestError('Agency ID is required');
       }
+      data.aiScore.value = aiScoreCalculator.calculateScore(data as ILead);
+      data.aiScore.lastCalculated = new Date();
       return await this.create(data);
     } catch (error) {
       if (error instanceof CustomError) {
@@ -82,6 +86,9 @@ export class LeadService extends BaseService<ILead> {
       if (agencyId) {
         query.agencyId = agencyId;
       }
+
+      data.aiScore.value = aiScoreCalculator.calculateScore(data as ILead);
+      data.aiScore.lastCalculated = new Date();
 
       const updatedLead = await this.model
         .findOneAndUpdate(query, data, { new: true })

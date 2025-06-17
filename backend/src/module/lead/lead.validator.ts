@@ -167,5 +167,6 @@ export const leadValidator = {
 
   idSchema: z.object({
     id: objectIdSchema,
+    agencyId: objectIdSchema,
   }),
 };

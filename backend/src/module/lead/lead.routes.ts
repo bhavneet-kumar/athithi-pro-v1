@@ -1,6 +1,6 @@
 import { Router } from 'express';
 
-import { validateBody } from '../../shared/middlewares/validation.middleware';
+import { validateBody, validateParams, validateQuery } from '../../shared/middlewares/validation.middleware';
 
 import { leadController } from './lead.controller';
 import { leadValidator } from './lead.validator';
@@ -9,17 +9,17 @@ const router = Router();
 
 router.post('/', validateBody(leadValidator.createSchema), leadController.create);
 
-router.get('/', leadController.getAll);
+router.get('/', validateQuery(leadValidator.filterSchema), leadController.getAll);
 
-router.get('/:id', leadController.getById);
+router.get('/:id', validateParams(leadValidator.idSchema), leadController.getById);
 
-// router.put(
-//   '/:id',
-//   validateParams(leadValidator.idSchema),
-//   validateBody(leadValidator.updateSchema),
-//   leadController.update,
-// );
+router.put(
+  '/:id',
+  validateParams(leadValidator.idSchema),
+  validateBody(leadValidator.updateSchema),
+  leadController.update,
+);
 
-// router.delete('/:id', validateParams(leadValidator.idSchema), leadController.delete);
+router.delete('/:id', validateParams(leadValidator.idSchema), leadController.delete);
 
 export const leadRoutes = router;

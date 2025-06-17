@@ -35,16 +35,40 @@ export class LeadService extends BaseService<ILead> {
     }
   }
 
+  private getSortOptions(sortBy?: string, sortOrder?: 'asc' | 'desc'): { [key: string]: 1 | -1 } {
+    if (!sortBy || !sortOrder) {
+      return { createdAt: -1 }; // Default sort by creation date descending
+    }
+
+    const SORT_FIELDS = {
+      fullName: 'fullName',
+      email: 'email',
+      status: 'status',
+      phone: 'phone',
+      createdAt: 'createdAt',
+      updatedAt: 'updatedAt',
+      source: 'source',
+      aiScore: 'aiScore.value',
+    } as const;
+
+    type SortField = keyof typeof SORT_FIELDS;
+    const sortField = SORT_FIELDS[sortBy as SortField] || 'createdAt';
+    return { [sortField]: sortOrder === 'asc' ? 1 : -1 };
+  }
+
   async getAll(query: ILeadFilter, agencyId: string): Promise<{ data: ILead[]; total: number }> {
     try {
-      const { limit, page, ...filterQuery } = query;
+      const { limit, page, sortBy, sortOrder, ...filterQuery } = query;
       const skip = (page - 1) * limit;
       const searchQuery = query.search ? { $text: { $search: query.search as string } } : {};
+
+      const sort = this.getSortOptions(sortBy, sortOrder);
 
       const [data, total] = await Promise.all([
         this.model
           .find({ ...filterQuery, ...searchQuery, agencyId })
           .select('fullName email status phone alternatePhone createdAt updatedAt source aiScore.value')
+          .sort(sort)
           .skip(skip)
           .limit(limit)
           .lean()

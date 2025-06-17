@@ -45,6 +45,7 @@ export interface ILead extends Document {
       transport?: string;
       mealPreference?: string;
       specialRequests: string;
+      preferredActivities?: string;
     };
   };
   aiScore: {
@@ -167,6 +168,7 @@ const leadSchema = new Schema<ILead>(
         transport: String,
         mealPreference: String,
         specialRequests: String,
+        preferredActivities: String,
       },
     },
     aiScore: {

@@ -1,7 +1,6 @@
-import { aiScoreCalculator } from 'shared/utils/aiScore';
-
 import { ILead, Lead } from '../../shared/models/lead.model';
 import { BaseService } from '../../shared/services/BaseService';
+import { aiScoreCalculator } from '../../shared/utils/aiScore';
 import { BadRequestError, CustomError, InternalServerError, NotFoundError } from '../../shared/utils/CustomError';
 
 import { ILeadCreate, ILeadFilter, ILeadUpdate } from './lead.interface';
@@ -16,8 +15,17 @@ export class LeadService extends BaseService<ILead> {
       if (!data.agencyId) {
         throw new BadRequestError('Agency ID is required');
       }
-      data.aiScore.value = aiScoreCalculator.calculateScore(data as ILead);
+      data.aiScore.value = Number(aiScoreCalculator.calculateScore(data as ILead));
+
       data.aiScore.lastCalculated = new Date();
+      data.audit.createdAt = new Date();
+      data.audit.createdBy = data.agencyId;
+      data.audit.version = 1;
+      data.audit.isDeleted = false;
+      data.audit.deletedAt = null;
+      data.audit.deletedBy = null;
+      data.audit.updatedAt = new Date();
+      data.audit.updatedBy = data.agencyId;
       return await this.create(data);
     } catch (error) {
       if (error instanceof CustomError) {
@@ -80,18 +88,28 @@ export class LeadService extends BaseService<ILead> {
     }
   }
 
-  async update(id: string, data: ILeadUpdate, agencyId?: string): Promise<ILead> {
+  async update(id: string, data: ILeadUpdate, agencyId: string): Promise<ILead> {
     try {
-      const query: { _id: string; agencyId?: string } = { _id: id };
-      if (agencyId) {
-        query.agencyId = agencyId;
-      }
+      const query: { _id: string; agencyId: string } = { _id: id, agencyId };
 
-      data.aiScore.value = aiScoreCalculator.calculateScore(data as ILead);
-      data.aiScore.lastCalculated = new Date();
+      // Remove aiScore from data to avoid conflicts
+      const { aiScore: _aiScore, ...restData } = data;
+
+      const updateData = {
+        ...restData,
+        $set: {
+          'aiScore.value': Number(aiScoreCalculator.calculateScore(data as ILead)),
+          'aiScore.lastCalculated': new Date(),
+          'audit.updatedAt': new Date(),
+          'audit.updatedBy': agencyId,
+        },
+        $inc: {
+          'audit.version': 1,
+        },
+      };
 
       const updatedLead = await this.model
-        .findOneAndUpdate(query, data, { new: true })
+        .findOneAndUpdate(query, updateData, { new: true })
         .select('fullName email status phone alternatePhone createdAt updatedAt source aiScore.value')
         .lean({ virtuals: true })
         .exec();
@@ -126,8 +144,10 @@ export class LeadService extends BaseService<ILead> {
             $set: {
               'audit.isDeleted': true,
               'audit.deletedAt': new Date(),
-              'audit.version': { $inc: 1 },
               'audit.deletedBy': agencyId,
+            },
+            $inc: {
+              'audit.version': 1,
             },
           },
           { new: true },

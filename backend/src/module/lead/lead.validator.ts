@@ -115,6 +115,7 @@ export const leadValidator = {
   }),
 
   updateSchema: z.object({
+    agencyId: objectIdSchema,
     fullName: z.string().min(1, 'Full name is required').optional(),
     email: z.string().email('Invalid email format').optional(),
     phone: z.string().min(1, 'Phone number is required').optional(),
@@ -167,6 +168,6 @@ export const leadValidator = {
 
   idSchema: z.object({
     id: objectIdSchema,
-    agencyId: objectIdSchema,
+    agencyId: objectIdSchema.optional(),
   }),
 };

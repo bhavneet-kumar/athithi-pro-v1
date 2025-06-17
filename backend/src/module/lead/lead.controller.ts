@@ -52,7 +52,7 @@ export class LeadController {
 
   async update(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const lead = await leadService.update(req.params.id, req.body, req.query.agencyId as string);
+      const lead = await leadService.update(req.params.id, req.body, req.body.agencyId as string);
       const response = new OkSuccess(lead, 'Lead updated successfully.');
       res.status(response.httpCode).json(response);
     } catch (error) {

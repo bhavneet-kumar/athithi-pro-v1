@@ -170,4 +170,8 @@ export const leadValidator = {
     id: objectIdSchema,
     agencyId: objectIdSchema.optional(),
   }),
+
+  changeStatusSchema: z.object({
+    status: z.nativeEnum(LeadStatus),
+  }),
 };

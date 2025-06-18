@@ -67,6 +67,16 @@ export class LeadController {
       next(error);
     }
   }
+
+  async changeStatus(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const lead = await leadService.changeStatus(req.params.id, req.body.status, req.user.agency as string);
+      const response = new OkSuccess(lead, 'Lead status changed successfully.');
+      res.status(response.httpCode).json(response);
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export const leadController = new LeadController();

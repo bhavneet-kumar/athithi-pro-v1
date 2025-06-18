@@ -189,6 +189,52 @@ export class LeadService extends BaseService<ILead> {
       );
     }
   }
+
+  async changeStatus(id: string, newStatus: string, agencyId: string): Promise<ILead> {
+    try {
+      if (!agencyId) {
+        throw new BadRequestError('Agency ID is required');
+      }
+      if (!id) {
+        throw new BadRequestError('Lead ID is required');
+      }
+      if (!newStatus) {
+        throw new BadRequestError('New status is required');
+      }
+
+      const updatedLead = await this.model
+        .findOneAndUpdate(
+          { _id: id, agencyId },
+          {
+            $set: {
+              status: newStatus,
+              'audit.updatedAt': new Date(),
+              'audit.updatedBy': agencyId,
+            },
+            $inc: {
+              'audit.version': 1,
+            },
+          },
+          { new: true },
+        )
+        .select('fullName email status phone alternatePhone createdAt updatedAt source aiScore.value')
+        .lean({ virtuals: true })
+        .exec();
+
+      if (!updatedLead) {
+        throw new NotFoundError(`Lead not found with ID: ${id}`);
+      }
+
+      return updatedLead as ILead;
+    } catch (error) {
+      if (error instanceof CustomError) {
+        throw error;
+      }
+      throw new InternalServerError(
+        `Lead status update failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
+  }
 }
 
 export const leadService = new LeadService();

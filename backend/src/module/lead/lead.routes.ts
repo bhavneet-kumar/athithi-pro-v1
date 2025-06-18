@@ -50,4 +50,15 @@ router.delete(
   leadController.delete,
 );
 
+router.put(
+  '/:id/change-status',
+  passport.authenticate('jwt', { session: false }),
+  checkPermission('leads', 'update'),
+  validateParams(leadValidator.idSchema),
+  validateBody(leadValidator.changeStatusSchema),
+  leadController.changeStatus,
+);
+
+// TODO: May add a partial update route as well in future if the need arises
+
 export const leadRoutes = router;

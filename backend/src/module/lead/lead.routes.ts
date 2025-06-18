@@ -26,6 +26,14 @@ router.get(
 );
 
 router.get(
+  '/export',
+  passport.authenticate('jwt', { session: false }),
+  checkPermission('leads', 'read'),
+  validateQuery(leadValidator.filterSchema),
+  leadController.exportLeads,
+);
+
+router.get(
   '/:id',
   passport.authenticate('jwt', { session: false }),
   checkPermission('leads', 'read'),

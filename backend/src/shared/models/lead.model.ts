@@ -1,6 +1,6 @@
-import { Schema, model, Document, Types } from 'mongoose';
+import { Document, Schema, Types, model } from 'mongoose';
 
-import { LeadStatus, LeadSource } from '../../types/enum/lead';
+import { LeadSource, LeadStatus } from '../../types/enum/lead';
 
 export interface ILead extends Document {
   agencyId: Types.ObjectId;

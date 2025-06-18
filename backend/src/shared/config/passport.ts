@@ -2,6 +2,7 @@ import passport from 'passport';
 import { Strategy as JwtStrategy, ExtractJwt } from 'passport-jwt';
 import { Strategy as LocalStrategy } from 'passport-local';
 
+import { Agency } from '../models/agency.model';
 import { Role } from '../models/role.model';
 import { User } from '../models/user.model';
 
@@ -49,6 +50,11 @@ passport.use(
           return done(new Error('User not found'));
         }
 
+        const agency = await Agency.findById(user.agency);
+        if (!agency) {
+          return done(new Error('Agency not found'));
+        }
+
         const role = await Role.findById(user.role);
         if (!role) {
           return done(new Error('Role not found'));
@@ -57,6 +63,7 @@ passport.use(
         return done(null, {
           id: user.id.toString(),
           agency: user.agency.toString(),
+          agencyCode: agency.code.toString(),
           role: {
             type: role.type as 'super_admin' | 'manager' | 'agent',
           },

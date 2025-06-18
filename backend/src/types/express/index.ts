@@ -12,6 +12,7 @@ declare module 'express-serve-static-core' {
     user?: {
       id: string;
       agency: string;
+      agencyCode: string;
       role: {
         type: UserRole;
       };

@@ -18,3 +18,5 @@ export enum LeadSource {
   MARKETPLACE = 'MARKETPLACE',
   OTHER = 'OTHER',
 }
+
+export const LEAD_NUMBER_PAD_LENGTH = 4;

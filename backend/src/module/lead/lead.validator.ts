@@ -160,34 +160,38 @@ export const leadValidator = {
     })
     .strict(),
 
-  filterSchema: z.object({
-    agencyId: objectIdSchema.optional(),
-    search: z.string().optional(),
-    status: z.nativeEnum(LeadStatus).optional(),
-    source: z.nativeEnum(LeadSource).optional(),
-    priority: z.string().optional(),
-    assignedTo: objectIdSchema.optional(),
-    tags: z.array(z.string()).optional(),
-    startDate: z
-      .string()
-      .transform((str) => new Date(str))
-      .optional(),
-    endDate: z
-      .string()
-      .transform((str) => new Date(str))
-      .optional(),
-    page: z.number().min(1).optional(),
-    limit: z.number().min(1).optional(),
-    sortBy: z.string().optional(),
-    sortOrder: z.enum(['asc', 'desc']).optional(),
-  }),
+  filterSchema: z
+    .object({
+      search: z.string().optional(),
+      status: z.nativeEnum(LeadStatus).optional(),
+      source: z.nativeEnum(LeadSource).optional(),
+      priority: z.string().optional(),
+      assignedTo: z.string().optional(),
+      tags: z.array(z.string()).optional(),
+      startDate: z
+        .string()
+        .transform((str) => new Date(str))
+        .optional(),
+      endDate: z
+        .string()
+        .transform((str) => new Date(str))
+        .optional(),
+      page: z.number().min(1).optional(),
+      limit: z.number().min(1).optional(),
+      sortBy: z.string().optional(),
+      sortOrder: z.enum(['asc', 'desc']).optional(),
+    })
+    .strip(),
 
-  idSchema: z.object({
-    id: objectIdSchema,
-    agencyId: objectIdSchema.optional(),
-  }),
+  idSchema: z
+    .object({
+      id: objectIdSchema,
+    })
+    .strict(),
 
-  changeStatusSchema: z.object({
-    status: z.nativeEnum(LeadStatus),
-  }),
+  changeStatusSchema: z
+    .object({
+      status: z.nativeEnum(LeadStatus),
+    })
+    .strict(),
 };

@@ -1,20 +1,42 @@
+import fs from 'node:fs';
+import path from 'node:path';
+
+import { LEAD_NUMBER_PAD_LENGTH } from 'types/enum/lead';
+
+import { BATCH_SIZE, EXPORT_LIMIT } from '../../shared/constant/lead';
+import { Counter } from '../../shared/models/counter.model';
 import { ILead, Lead } from '../../shared/models/lead.model';
 import { BaseService } from '../../shared/services/BaseService';
 import { aiScoreCalculator } from '../../shared/utils/aiScore';
 import { BadRequestError, CustomError, InternalServerError, NotFoundError } from '../../shared/utils/CustomError';
 
 import { ILeadCreate, ILeadFilter, ILeadUpdate } from './lead.interface';
+import { cleanupFile, getExportDir, getLeadExportFields, writeCsvHeader, writeCsvRows } from './lead.util';
 
 export class LeadService extends BaseService<ILead> {
+  private readonly UNKNOWN_ERROR = 'Unknown error';
+
   constructor() {
     super(Lead, 'Lead');
   }
 
-  async createLead(data: ILeadCreate): Promise<ILead> {
+  async createLead(data: ILeadCreate, agencyCode: string): Promise<ILead & { agencyCode: string }> {
     try {
       data.aiScore.value = Number(aiScoreCalculator.calculateScore(data as ILead));
 
-      return await this.create(data);
+      // Generate lead number if not set
+      const currentYear = new Date().getFullYear();
+      const counterName = `leadNumber_${data.agencyId}_${currentYear}`;
+
+      const counter = await Counter.findOneAndUpdate(
+        { name: counterName },
+        { $inc: { value: 1 } },
+        { new: true, upsert: true },
+      );
+
+      const leadNumber = `${agencyCode}-${currentYear}-${counter.value.toString().padStart(LEAD_NUMBER_PAD_LENGTH, '0')}`;
+
+      return (await this.create({ ...data, leadNumber })) as ILead & { agencyCode: string };
     } catch (error) {
       if (error instanceof CustomError) {
         throw error;
@@ -70,7 +92,7 @@ export class LeadService extends BaseService<ILead> {
         throw error; // Preserve known error types
       }
       throw new InternalServerError(
-        `Failed to fetch leads: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `Failed to fetch leads: ${error instanceof Error ? error.message : this.UNKNOWN_ERROR}`,
       );
     }
   }
@@ -162,7 +184,7 @@ export class LeadService extends BaseService<ILead> {
         throw error;
       }
       throw new InternalServerError(
-        `Lead deletion failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `Lead deletion failed: ${error instanceof Error ? error.message : this.UNKNOWN_ERROR}`,
       );
     }
   }
@@ -207,7 +229,47 @@ export class LeadService extends BaseService<ILead> {
         throw error;
       }
       throw new InternalServerError(
-        `Lead status update failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `Lead status update failed: ${error instanceof Error ? error.message : this.UNKNOWN_ERROR}`,
+      );
+    }
+  }
+
+  async exportLeads(agencyId: string, filters: Partial<ILeadFilter> = {}): Promise<string> {
+    let filePath = '';
+    try {
+      const exportDir = getExportDir();
+      // eslint-disable-next-line security/detect-non-literal-fs-filename
+      if (!fs.existsSync(exportDir)) {
+        // eslint-disable-next-line security/detect-non-literal-fs-filename
+        fs.mkdirSync(exportDir);
+      }
+      filePath = path.join(exportDir, `leads-${agencyId}-${Date.now()}.csv`);
+      const fields = getLeadExportFields();
+      // eslint-disable-next-line security/detect-non-literal-fs-filename
+      const writable = fs.createWriteStream(filePath);
+      writeCsvHeader(writable, fields);
+      const mongoFilter = {
+        agencyId,
+        'audit.isDeleted': { $ne: true },
+        ...filters,
+      };
+      const cursor = this.model
+        .find(mongoFilter)
+        .select('fullName email status phone alternatePhone createdAt updatedAt source aiScore.value')
+        .limit(EXPORT_LIMIT)
+        .batchSize(BATCH_SIZE)
+        .cursor();
+      await writeCsvRows(cursor, writable, fields);
+      writable.end();
+      await new Promise<void>((resolve, reject) => {
+        writable.on('finish', () => resolve());
+        writable.on('error', (err) => reject(err));
+      });
+      return filePath;
+    } catch (error) {
+      cleanupFile(filePath);
+      throw new InternalServerError(
+        `Lead export failed: ${error instanceof Error ? error.message : this.UNKNOWN_ERROR}`,
       );
     }
   }

@@ -9,6 +9,7 @@ import { auditMiddleware } from './audit.middleware';
 interface AuthenticatedUser {
   id: string;
   agency: string;
+  agencyCode: string;
   role: {
     type: UserRole;
   };

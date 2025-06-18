@@ -14,7 +14,10 @@ import { leadService } from './lead.service';
 export class LeadController {
   async create(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const lead = await leadService.createLead({ ...req.body, agencyId: req.user.agency as string });
+      const lead = await leadService.createLead(
+        { ...req.body, agencyId: req.user.agency as string },
+        req.user.agencyCode as string,
+      );
       res.customSuccess(new CreatedSuccess(lead, 'Lead created successfully.'));
     } catch (error) {
       next(error);
@@ -67,6 +70,15 @@ export class LeadController {
     try {
       const lead = await leadService.changeStatus(req.params.id, req.body, req.body.status, req.user.agency as string);
       res.customSuccess(new OkSuccess(lead, 'Lead status changed successfully.'));
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async exportLeads(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const filePath = await leadService.exportLeads(req.user.agency as string, req.query);
+      res.download(filePath);
     } catch (error) {
       next(error);
     }

@@ -1,0 +1,22 @@
+export enum LeadStatus {
+  NEW = 'NEW',
+  CONTACTED = 'CONTACTED',
+  QUALIFIED = 'QUALIFIED',
+  PROPOSAL = 'PROPOSAL',
+  NEGOTIATION = 'NEGOTIATION',
+  BOOKED = 'BOOKED',
+  LOST = 'LOST',
+}
+
+export enum LeadSource {
+  WEBSITE = 'WEBSITE',
+  REFERRAL = 'REFERRAL',
+  SOCIAL = 'SOCIAL',
+  EMAIL = 'EMAIL',
+  PHONE = 'PHONE',
+  WHATSAPP = 'WHATSAPP',
+  MARKETPLACE = 'MARKETPLACE',
+  OTHER = 'OTHER',
+}
+
+export const LEAD_NUMBER_PAD_LENGTH = 4;

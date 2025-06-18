@@ -1,7 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-// eslint-disable-next-line import/no-extraneous-dependencies
 import { Parser } from 'json2csv';
 
 import { LEAD_EXPORT_FIELDS } from '../../shared/constant/lead';

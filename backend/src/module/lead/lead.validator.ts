@@ -82,7 +82,6 @@ export const leadValidator = {
   createSchema: z
     .object({
       agencyId: objectIdSchema.optional(),
-      leadNumber: z.string().min(1, 'Lead number is required'),
       fullName: z.string().min(1, 'Full name is required'),
       email: z.string().email('Invalid email format'),
       phone: z.string().min(1, 'Phone number is required'),

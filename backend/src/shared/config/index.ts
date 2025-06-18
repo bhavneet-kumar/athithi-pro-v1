@@ -29,4 +29,11 @@ export const config = {
     refreshPublicKey: process.env.JWT_REFRESH_PUBLIC_KEY?.replace(/\\n/g, '\n') || '',
     // refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
   },
+  smtp: {
+    SMTP_USER: process.env.SMTP_USER,
+    SMTP_PASS: process.env.SMTP_PASS,
+    FRONTEND_BASE_URL: process.env.FRONTEND_BASE_URL,
+  },
+  frontendUrl: process.env.FRONTEND_URL as string,
+  passwordResetExpiryMinutes: 30,
 };

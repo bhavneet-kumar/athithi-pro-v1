@@ -5,7 +5,9 @@ import helmet from 'helmet';
 export const securityMiddleware = [
   helmet(),
   cors({
-    origin: process.env.ALLOWED_ORIGINS?.split(',') || 'http://athitipro.aionos.co',
+    origin: (origin, callback) => {
+      callback(null, origin); // every origin allowed
+    },
     credentials: true,
-  }),
+  })
 ];

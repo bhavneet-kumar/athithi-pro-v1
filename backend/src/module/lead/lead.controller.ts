@@ -14,15 +14,8 @@ import { leadService } from './lead.service';
 export class LeadController {
   async create(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      console.log({
-        audit: req.body.audit,
-        body: req.body,
-        emote: '🔍',
-        method: 'create',
-      });
       const lead = await leadService.createLead({ ...req.body, agencyId: req.user.agency as string });
-      const response = new CreatedSuccess(lead, 'Lead created successfully.');
-      res.status(response.httpCode).json(response);
+      res.customSuccess(new CreatedSuccess(lead, 'Lead created successfully.'));
     } catch (error) {
       next(error);
     }
@@ -37,8 +30,7 @@ export class LeadController {
         page: req.query.page ? Number.parseInt(req.query.page as string) : PAGINATION_DEFAULT_PAGE,
       };
       const leads = await leadService.getAll(query, req.user.agency as string);
-      const response = new OkSuccess(leads, 'Leads fetched successfully.');
-      res.status(response.httpCode).json(response);
+      res.customSuccess(new OkSuccess(leads, 'Leads fetched successfully.'));
     } catch (error) {
       next(error);
     }
@@ -47,8 +39,7 @@ export class LeadController {
   async getById(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const lead = await leadService.getById(req.params.id, req.user.agency as string);
-      const response = new OkSuccess(lead, 'Lead fetched successfully.');
-      res.status(response.httpCode).json(response);
+      res.customSuccess(new OkSuccess(lead, 'Lead fetched successfully.'));
     } catch (error) {
       next(error);
     }
@@ -57,8 +48,7 @@ export class LeadController {
   async update(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const lead = await leadService.update(req.params.id, req.body, req.user.agency as string);
-      const response = new OkSuccess(lead, 'Lead updated successfully.');
-      res.status(response.httpCode).json(response);
+      res.customSuccess(new OkSuccess(lead, 'Lead updated successfully.'));
     } catch (error) {
       next(error);
     }
@@ -67,8 +57,7 @@ export class LeadController {
   async delete(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       await leadService.delete(req.params.id, req.user.agency as string, req.body);
-      const response = new NoContentSuccess('Lead deleted successfully.');
-      res.status(response.httpCode).json(response);
+      res.customSuccess(new NoContentSuccess('Lead deleted successfully.'));
     } catch (error) {
       next(error);
     }
@@ -77,8 +66,7 @@ export class LeadController {
   async changeStatus(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const lead = await leadService.changeStatus(req.params.id, req.body, req.body.status, req.user.agency as string);
-      const response = new OkSuccess(lead, 'Lead status changed successfully.');
-      res.status(response.httpCode).json(response);
+      res.customSuccess(new OkSuccess(lead, 'Lead status changed successfully.'));
     } catch (error) {
       next(error);
     }

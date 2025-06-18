@@ -12,11 +12,6 @@ export class LeadService extends BaseService<ILead> {
 
   async createLead(data: ILeadCreate): Promise<ILead> {
     try {
-      console.log({
-        audit: data.audit,
-        body: data,
-        emote: '🔍',
-      });
       data.aiScore.value = Number(aiScoreCalculator.calculateScore(data as ILead));
 
       return await this.create(data);

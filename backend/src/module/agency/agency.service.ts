@@ -1,5 +1,5 @@
 import { Agency } from '../../shared/models/agency.model';
-import { BaseService } from '../../shared/services/baseService';
+import { BaseService } from '../../shared/services/base.service';
 import {
   BadRequestError,
   NotFoundError,

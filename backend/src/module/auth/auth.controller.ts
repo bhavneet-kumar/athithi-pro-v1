@@ -75,7 +75,9 @@ export class AuthController {
     try {
       const { refreshToken } = req.body;
       if (!refreshToken) throw new BadRequestError('Refresh token is required');
+      console.log(refreshToken, "++++++++++++++")
       const result = await authService.refreshToken(req.body);
+      console.log(result, "::::::::::::::::")
       res.customSuccess(new OkSuccess(result, 'Token refreshed successfully'));
     } catch (error) {
       next(error);

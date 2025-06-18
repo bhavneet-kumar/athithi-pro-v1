@@ -36,11 +36,14 @@ const userSchema = new Schema<IUser>(
       trim: true,
       lowercase: true,
     },
-    password: {
-      type: String,
-      required: true,
-      minlength: 6,
-    },
+    // password: {
+    //   type: String,
+    //   required: true,
+    //   minlength: 6,
+    // },
+
+
+
     firstName: {
       type: String,
       required: true,
@@ -65,20 +68,22 @@ const userSchema = new Schema<IUser>(
       type: Boolean,
       default: true,
     },
-    isEmailVerified: {
-      type: Boolean,
-      default: false,
-    },
-    emailVerificationToken: String,
-    emailVerificationExpires: Date,
-    passwordResetToken: String,
-    passwordResetExpires: Date,
-    failedLoginAttempts: {
-      type: Number,
-      default: 0,
-    },
-    lastFailedLogin: Date,
-    accountLockedUntil: Date,
+
+
+    // isEmailVerified: {
+    //   type: Boolean,
+    //   default: false,
+    // },
+    // emailVerificationToken: String,
+    // emailVerificationExpires: Date,
+    // passwordResetToken: String,
+    // passwordResetExpires: Date,
+    // failedLoginAttempts: {
+    //   type: Number,
+    //   default: 0,
+    // },
+    // lastFailedLogin: Date,
+    // accountLockedUntil: Date,
   },
   {
     timestamps: true,

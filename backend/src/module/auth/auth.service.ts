@@ -2,6 +2,7 @@ import jwt, { SignOptions, Secret } from 'jsonwebtoken';
 import { Types } from 'mongoose';
 import { User, IUser } from '../../shared/models/user.model';
 import { Role } from '../../shared/models/role.model';
+import { IAgency } from '../../shared/models/agency.model';
 import { emailService } from '../../shared/services/email.service';
 import {
   BadRequestError,
@@ -46,9 +47,16 @@ export class AuthService extends BaseService<IUser> {
       }
 
       // Check if user already exists
-      const existingUser = await this.findOne({ email: data.email });
+      // const existingUser = await this.findOne({ email: data.email });
+      // console.log(existingUser, "^^^^^^^^^^^^")
+      const existingUser = (await this.findOne({ email: data.email }, ['agency'])) as IUser & { agency: IAgency };
+
+
+
       if (existingUser) {
-        throw new BusinessError('User with this email already exists');
+        throw new BusinessError(
+          `User with this email already exists for Agency: ${existingUser.agency.name}, Database unique Id: ${existingUser.agency._id}`
+        );
       }
 
       // Create new user - use User model directly to avoid type conflicts
@@ -61,6 +69,7 @@ export class AuthService extends BaseService<IUser> {
       // Generate email verification token
       await user.generateEmailVerificationToken();
 
+      console.log(user, "came here")
       // Send verification email
       await emailService.sendVerificationEmail(user.email, user.emailVerificationToken!);
     } catch (error: any) {

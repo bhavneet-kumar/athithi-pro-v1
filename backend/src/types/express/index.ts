@@ -1,5 +1,5 @@
 import 'express';
-import type CustomSuccess from '../../shared/utils/customSuccess';
+import type CustomSuccess from '../../shared/utils/CustomSuccess';
 
 declare module 'express-serve-static-core' {
   interface Response {

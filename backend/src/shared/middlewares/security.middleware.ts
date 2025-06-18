@@ -4,8 +4,14 @@ import helmet from 'helmet';
 
 export const securityMiddleware = [
   helmet(),
+  // cors({
+  //   origin: process.env.ALLOWED_ORIGINS?.split(',') || 'http://athitipro.aionos.co',
+  //   credentials: true,
+  // }),
   cors({
-    origin: process.env.ALLOWED_ORIGINS?.split(',') || 'http://athitipro.aionos.co',
+    origin: (origin, callback) => {
+      callback(null, origin); // har origin allow hoga
+    },
     credentials: true,
-  }),
+  })
 ];

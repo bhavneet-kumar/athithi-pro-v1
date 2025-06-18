@@ -79,74 +79,86 @@ const engagementSchema = z
 const objectIdSchema = z.string().regex(/^[\dA-Fa-f]{24}$/, 'Invalid ObjectId format');
 
 export const leadValidator = {
-  createSchema: z.object({
-    agencyId: objectIdSchema.optional(),
-    leadNumber: z.string().min(1, 'Lead number is required'),
-    fullName: z.string().min(1, 'Full name is required'),
-    email: z.string().email('Invalid email format'),
-    phone: z.string().min(1, 'Phone number is required'),
-    alternatePhone: z.string().optional(),
-    dateOfBirth: z
-      .string()
-      .transform((str) => new Date(str))
-      .optional(),
-    gender: z.string().optional(),
-    occupation: z.string().optional(),
-    company: z.string().optional(),
-    address: addressSchema.optional(),
-    status: z.nativeEnum(LeadStatus),
-    source: z.nativeEnum(LeadSource),
-    priority: z.string().optional(),
-    assignedTo: objectIdSchema.optional(),
-    travelDetails: travelDetailsSchema,
-    aiScore: aiScoreSchema,
-    engagement: engagementSchema,
-    tags: z.array(z.string()).optional(),
-    notes: z.string().optional(),
-    nextFollowUp: z
-      .string()
-      .transform((str) => new Date(str))
-      .optional(),
-    followUpReason: z.string().optional(),
-    audit: z.object({
-      createdBy: objectIdSchema,
-      updatedBy: objectIdSchema,
-    }),
-  }),
+  createSchema: z
+    .object({
+      agencyId: objectIdSchema.optional(),
+      leadNumber: z.string().min(1, 'Lead number is required'),
+      fullName: z.string().min(1, 'Full name is required'),
+      email: z.string().email('Invalid email format'),
+      phone: z.string().min(1, 'Phone number is required'),
+      alternatePhone: z.string().optional(),
+      dateOfBirth: z
+        .string()
+        .transform((str) => new Date(str))
+        .optional(),
+      gender: z.string().optional(),
+      occupation: z.string().optional(),
+      company: z.string().optional(),
+      address: addressSchema.optional(),
+      status: z.nativeEnum(LeadStatus),
+      source: z.nativeEnum(LeadSource),
+      priority: z.string().optional(),
+      assignedTo: objectIdSchema.optional(),
+      travelDetails: travelDetailsSchema,
+      aiScore: aiScoreSchema,
+      engagement: engagementSchema,
+      tags: z.array(z.string()).optional(),
+      notes: z.string().optional(),
+      nextFollowUp: z
+        .string()
+        .transform((str) => new Date(str))
+        .optional(),
+      followUpReason: z.string().optional(),
+      audit: z
+        .object({
+          createdAt: z.date(),
+          createdBy: objectIdSchema.nullable(),
+          updatedAt: z.date(),
+          updatedBy: objectIdSchema.nullable(),
+          version: z.number(),
+          isDeleted: z.boolean(),
+        })
+        .strict(),
+    })
+    .strict(),
 
-  updateSchema: z.object({
-    agencyId: objectIdSchema.optional(),
-    fullName: z.string().min(1, 'Full name is required').optional(),
-    email: z.string().email('Invalid email format').optional(),
-    phone: z.string().min(1, 'Phone number is required').optional(),
-    alternatePhone: z.string().optional(),
-    dateOfBirth: z
-      .string()
-      .transform((str) => new Date(str))
-      .optional(),
-    gender: z.string().optional(),
-    occupation: z.string().optional(),
-    company: z.string().optional(),
-    address: addressSchema.optional(),
-    status: z.nativeEnum(LeadStatus),
-    source: z.nativeEnum(LeadSource),
-    priority: z.string().optional(),
-    assignedTo: objectIdSchema.optional(),
-    travelDetails: travelDetailsSchema,
-    aiScore: aiScoreSchema.optional(),
-    engagement: engagementSchema,
-    tags: z.array(z.string()).optional(),
-    notes: z.string().optional(),
-    nextFollowUp: z
-      .string()
-      .transform((str) => new Date(str))
-      .optional(),
-    followUpReason: z.string().optional(),
-    audit: z.object({
-      updatedBy: objectIdSchema.optional(),
-      deletedBy: objectIdSchema.optional(),
-    }),
-  }),
+  updateSchema: z
+    .object({
+      agencyId: objectIdSchema.optional(),
+      fullName: z.string().min(1, 'Full name is required').optional(),
+      email: z.string().email('Invalid email format').optional(),
+      phone: z.string().min(1, 'Phone number is required').optional(),
+      alternatePhone: z.string().optional(),
+      dateOfBirth: z
+        .string()
+        .transform((str) => new Date(str))
+        .optional(),
+      gender: z.string().optional(),
+      occupation: z.string().optional(),
+      company: z.string().optional(),
+      address: addressSchema.optional(),
+      status: z.nativeEnum(LeadStatus),
+      source: z.nativeEnum(LeadSource),
+      priority: z.string().optional(),
+      assignedTo: objectIdSchema.optional(),
+      travelDetails: travelDetailsSchema,
+      aiScore: aiScoreSchema.optional(),
+      engagement: engagementSchema,
+      tags: z.array(z.string()).optional(),
+      notes: z.string().optional(),
+      nextFollowUp: z
+        .string()
+        .transform((str) => new Date(str))
+        .optional(),
+      followUpReason: z.string().optional(),
+      // Audit fields at root for update/delete compatibility
+      updatedAt: z.date().optional(),
+      updatedBy: objectIdSchema.nullable().optional(),
+      isDeleted: z.boolean().optional(),
+      deletedAt: z.date().optional(),
+      deletedBy: objectIdSchema.nullable().optional(),
+    })
+    .strict(),
 
   filterSchema: z.object({
     agencyId: objectIdSchema.optional(),

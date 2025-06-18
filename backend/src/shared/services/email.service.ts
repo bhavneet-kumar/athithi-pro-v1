@@ -31,9 +31,9 @@ class EmailService {
     // });
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async sendPasswordResetEmail(email: string, token: string): Promise<void> {
     console.log('email', email);
-    console.log('token', token);
     // const resetUrl = `${config.app.url}/api/auth/reset-password/${token}`;
     // await this.transporter.sendMail({
     //   from: config.email.from,

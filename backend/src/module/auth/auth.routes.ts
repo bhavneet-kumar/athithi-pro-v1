@@ -16,7 +16,7 @@ import {
 const router = Router();
 
 /**
- =* @swagger
+ * =@swagger
  * /auth/register:
  *   post:
  *     summary: Register a new user
@@ -54,7 +54,7 @@ const router = Router();
 router.post('/register', signupLimiter, validateBody(registerSchema), authController.register);
 
 /**
- =* @swagger
+ * =@swagger
  * /auth/verify-email/{token}:
  *   get:
  *     summary: Verify user email
@@ -70,7 +70,7 @@ router.post('/register', signupLimiter, validateBody(registerSchema), authContro
 router.get('/verify-email/:token', validateParams(tokenParamSchema), authController.verifyEmail);
 
 /**
- =* @swagger
+ * =@swagger
  * /auth/login:
  *   post:
  *     summary: User login
@@ -95,7 +95,7 @@ router.get('/verify-email/:token', validateParams(tokenParamSchema), authControl
 router.post('/login', loginLimiter, validateBody(loginSchema), authController.login);
 
 /**
-= * @swagger
+ * =@swagger
  * /auth/forgot-password:
  *   post:
  *     summary: Send password reset email
@@ -122,7 +122,7 @@ router.post(
 );
 
 /**
- =* @swagger
+ * =@swagger
  * /auth/reset-password/{token}:
  *   post:
  *     summary: Reset password
@@ -158,7 +158,7 @@ router.post(
 );
 
 /**
- =* @swagger
+ * =@swagger
  * /auth/refresh-token:
  *   post:
  *     summary: Refresh authentication token

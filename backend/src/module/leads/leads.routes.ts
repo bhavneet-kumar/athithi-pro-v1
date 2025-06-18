@@ -9,10 +9,11 @@ import { leadsController, LeadsController } from './leads.controller';
 const router = Router();
 
 /**
- * @openapi
- * /api/v1/leads:
+ * @swagger
+ * /leads:
  *   post:
  *     summary: Create a new lead
+ *     tags: [Leads]
  *     description: Create a new lead in the system.
  *     responses: 200
  */
@@ -25,10 +26,11 @@ router.post(
 );
 
 /**
- * @openapi
- * /api/v1/leads:
+ * @swagger
+ * /leads:
  *   get:
  *     summary: Get all leads
+ *     tags: [Leads]
  *     responses:
  *       200:
  *       description: List of leads
@@ -42,10 +44,11 @@ router.get(
 );
 
 /**
- * @openapi
- * /api/v1/leads/{leadId}:
+ * @swagger
+ * /leads/{leadId}:
  *   get:
  *     summary: Get lead details
+ *     tags: [Leads]
  *     description: Retrieve details of a specific lead by ID.
  *     responses: 200
  *     parameters:
@@ -66,10 +69,11 @@ router.get(
 );
 
 /**
- * @openapi
- * /api/v1/leads/{leadId}:
+ * @swagger
+ * /leads/{leadId}:
  *   delete:
  *     summary: Delete a lead
+ *     tags: [Leads]
  *     description: Delete a specific lead by ID.
  *     responses: 200
  *     parameters:

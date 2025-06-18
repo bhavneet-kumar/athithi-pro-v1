@@ -1,7 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 
-import { BadRequestError, CustomError } from '../../shared/utils/CustomError';
+import { BadRequestError, CustomError, NotFoundError } from '../../shared/utils/customError';
+import { CreatedSuccess, NoContentSuccess } from '../../shared/utils/customSuccess';
 
+import { AgencyFilters, AgencyQueryParams, AgencySortOptions } from './agency.interface';
 import { agencyService } from './agency.service';
 
 /**
@@ -13,22 +15,27 @@ export class AgencyController {
   /**
    * Create a new agency
    * Validation is handled by middleware
+   * @param req
+   * @param res
+   * @param next
    */
   async createAgency(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const agency = await agencyService.createAgency(req.body);
-      res.status(201).json({
-        success: true,
-        message: 'Agency created successfully',
-        data: {
-          id: agency.id,
-          name: agency.name,
-          code: agency.code,
-          domain: agency.domain,
-          isActive: agency.isActive,
-          settings: agency.settings,
-        },
-      });
+
+      res.customSuccess(
+        new CreatedSuccess(
+          {
+            id: agency.id,
+            name: agency.name,
+            code: agency.code,
+            domain: agency.domain,
+            isActive: agency.isActive,
+            settings: agency.settings,
+          },
+          'Agency created successfully',
+        ),
+      );
     } catch (error) {
       next(error);
     }
@@ -36,6 +43,9 @@ export class AgencyController {
 
   /**
    * Get agency by ID
+   * @param req
+   * @param res
+   * @param next
    */
   async getAgency(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
@@ -65,6 +75,9 @@ export class AgencyController {
   /**
    * Update agency
    * Validation is handled by middleware
+   * @param req
+   * @param res
+   * @param next
    */
   async updateAgency(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
@@ -94,6 +107,9 @@ export class AgencyController {
 
   /**
    * Delete agency
+   * @param req
+   * @param res
+   * @param next
    */
   async deleteAgency(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
@@ -104,10 +120,7 @@ export class AgencyController {
       }
 
       await agencyService.deleteAgency(agencyId);
-      res.status(204).json({
-        success: true,
-        message: 'Agency deleted successfully',
-      });
+      res.customSuccess(new NoContentSuccess('Agency deleted successfully'));
     } catch (error) {
       if (error instanceof CustomError) {
         throw error;
@@ -118,13 +131,16 @@ export class AgencyController {
 
   /**
    * List agencies with pagination and filtering
+   * @param req
+   * @param res
+   * @param next
    */
   async listAgencies(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { page, limit, search, isActive, sort, order } = req.query as any;
+      const { page, limit, search, isActive, sort, order } = req.query as AgencyQueryParams;
 
       // Build filters
-      const filters: any = {};
+      const filters: AgencyFilters = {};
       if (search) {
         filters.$or = [
           { name: { $regex: search, $options: 'i' } },
@@ -132,18 +148,18 @@ export class AgencyController {
           { domain: { $regex: search, $options: 'i' } },
         ];
       }
-      if (isActive !== undefined) {
+      if (typeof isActive !== 'undefined') {
         filters.isActive = isActive;
       }
 
       // Build sort
-      const sortObj: any = {};
+      const sortObj: AgencySortOptions = {};
       sortObj[sort || 'createdAt'] = order === 'asc' ? 1 : -1;
 
       const result = await agencyService.listAgencies(
         filters,
-        parseInt(page || '1', 10),
-        parseInt(limit || '10', 10),
+        Number.parseInt(page || '1', 10),
+        Number.parseInt(limit || '10', 10),
         sortObj,
       );
 
@@ -171,6 +187,9 @@ export class AgencyController {
 
   /**
    * Get agency by code
+   * @param req
+   * @param res
+   * @param next
    */
   async getAgencyByCode(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
@@ -183,11 +202,7 @@ export class AgencyController {
       const agency = await agencyService.getAgencyByCode(code);
 
       if (!agency) {
-        res.status(404).json({
-          success: false,
-          message: 'Agency not found',
-        });
-        return;
+        throw new NotFoundError('Agency not found');
       }
 
       res.json({
@@ -208,6 +223,9 @@ export class AgencyController {
 
   /**
    * Update agency settings
+   * @param req
+   * @param res
+   * @param next
    */
   async updateAgencySettings(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {

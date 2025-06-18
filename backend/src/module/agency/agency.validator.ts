@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 // Common validation schemas
-const hexColorSchema = z.string().regex(/^#[0-9A-F]{6}$/i, 'Invalid hex color format (e.g., #FF0000)');
+const hexColorSchema = z.string().regex(/^#[\da-f]{6}$/i, 'Invalid hex color format (e.g., #FF0000)');
 
 const urlSchema = z.string().url('Invalid URL format').max(500, 'URL must not exceed 500 characters');
 
@@ -9,13 +9,13 @@ const domainSchema = z
   .string()
   .min(3, 'Domain must be at least 3 characters')
   .max(255, 'Domain must not exceed 255 characters')
-  .regex(/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, 'Invalid domain format');
+  .regex(/^[\d.A-Za-z-]+\.[A-Za-z]{2,}$/, 'Invalid domain format');
 
 const agencyCodeSchema = z
   .string()
   .min(2, 'Agency code must be at least 2 characters')
   .max(10, 'Agency code must not exceed 10 characters')
-  .regex(/^[A-Z0-9]+$/, 'Agency code must contain only uppercase letters and numbers')
+  .regex(/^[\dA-Z]+$/, 'Agency code must contain only uppercase letters and numbers')
   .transform((val) => val.toUpperCase());
 
 const agencyNameSchema = z
@@ -23,7 +23,7 @@ const agencyNameSchema = z
   .min(2, 'Agency name must be at least 2 characters')
   .max(100, 'Agency name must not exceed 100 characters')
   .trim()
-  .regex(/^[a-zA-Z0-9\s&.-]+$/, 'Agency name contains invalid characters');
+  .regex(/^[\d\s&.A-Za-z-]+$/, 'Agency name contains invalid characters');
 
 // Agency settings schema aligned with the model
 const agencySettingsSchema = z
@@ -32,7 +32,7 @@ const agencySettingsSchema = z
       .number()
       .int('Max users must be an integer')
       .min(1, 'Max users must be at least 1')
-      .max(10000, 'Max users cannot exceed 10,000')
+      .max(10_000, 'Max users cannot exceed 10,000')
       .default(100),
     allowedDomains: z
       .array(domainSchema)
@@ -77,7 +77,7 @@ export const updateAgencySettingsSchema = z.object({
       .number()
       .int('Max users must be an integer')
       .min(1, 'Max users must be at least 1')
-      .max(10000, 'Max users cannot exceed 10,000'),
+      .max(10_000, 'Max users cannot exceed 10,000'),
     allowedDomains: z
       .array(domainSchema)
       .min(0, 'At least one domain is required')
@@ -101,18 +101,22 @@ export const listAgenciesQuerySchema = z.object({
   page: z
     .string()
     .optional()
-    .transform((val) => (val ? parseInt(val, 10) : 1)),
+    .transform((val) => (val ? Number.parseInt(val, 10) : 1)),
   limit: z
     .string()
     .optional()
-    .transform((val) => (val ? parseInt(val, 10) : 10)),
+    .transform((val) => (val ? Number.parseInt(val, 10) : 10)),
   search: z.string().optional(),
   isActive: z
     .string()
     .optional()
     .transform((val) => {
-      if (val === 'true') return true;
-      if (val === 'false') return false;
+      if (val === 'true') {
+        return true;
+      }
+      if (val === 'false') {
+        return false;
+      }
       return undefined;
     }),
   sort: z.enum(['name', 'code', 'createdAt', 'updatedAt']).optional().default('createdAt'),
@@ -123,7 +127,7 @@ export const listAgenciesQuerySchema = z.object({
 export const agencyIdParamSchema = z.object({
   agencyId: z
     .string()
-    .regex(/^[0-9a-fA-F]{24}$/, 'Invalid agency ID format')
+    .regex(/^[\dA-Fa-f]{24}$/, 'Invalid agency ID format')
     .describe('Agency MongoDB ObjectId'),
 });
 

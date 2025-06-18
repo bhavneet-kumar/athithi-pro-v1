@@ -1,7 +1,10 @@
 import jwt, { SignOptions, Secret } from 'jsonwebtoken';
 import { Types } from 'mongoose';
-import { User, IUser } from '../../shared/models/user.model';
+
+import { config } from '../../shared/config/index';
 import { Role } from '../../shared/models/role.model';
+import { User, IUser } from '../../shared/models/user.model';
+import { BaseService } from '../../shared/services/BaseService';
 import { emailService } from '../../shared/services/email.service';
 import {
   BadRequestError,
@@ -11,9 +14,8 @@ import {
   BusinessError,
   InternalServerError,
   CustomError,
-} from '../../shared/utils/CustomError';
-import { BaseService } from '../../shared/services/BaseService';
-import { config } from '../../shared/config/index';
+} from '../../shared/utils/customError';
+
 import { ILoginInput, IRegisterInput, IPasswordResetInput, IRefreshTokenInput, ILoginResponse } from './auth.interface';
 
 export class AuthService extends BaseService<IUser> {
@@ -108,7 +110,7 @@ export class AuthService extends BaseService<IUser> {
 
       // Check if account is locked
       if (user.accountLockedUntil && user.accountLockedUntil > new Date()) {
-        const lockTimeRemaining = Math.ceil((user.accountLockedUntil.getTime() - Date.now()) / 60000);
+        const lockTimeRemaining = Math.ceil((user.accountLockedUntil.getTime() - Date.now()) / 60_000);
         throw new ForbiddenError(`Account is locked. Please try again in ${lockTimeRemaining} minutes.`);
       }
 
@@ -197,6 +199,7 @@ export class AuthService extends BaseService<IUser> {
 
   /**
    * Handle failed login attempts with account locking logic
+   * @param user
    */
   private async handleFailedLogin(user: IUser): Promise<void> {
     try {
@@ -218,6 +221,7 @@ export class AuthService extends BaseService<IUser> {
 
   /**
    * Reset failed login attempts after successful login
+   * @param user
    */
   private async resetFailedLoginAttempts(user: IUser): Promise<void> {
     try {
@@ -234,6 +238,7 @@ export class AuthService extends BaseService<IUser> {
 
   /**
    * Generate JWT tokens
+   * @param userId
    */
   private generateTokens(userId: string): { token: string; refreshToken: string } {
     try {

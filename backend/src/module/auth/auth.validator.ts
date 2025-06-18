@@ -14,17 +14,17 @@ const passwordSchema = z
   .max(128, 'Password must not exceed 128 characters')
   .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
   .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
-  .regex(/[0-9]/, 'Password must contain at least one number')
-  .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character');
+  .regex(/\d/, 'Password must contain at least one number')
+  .regex(/[^\dA-Za-z]/, 'Password must contain at least one special character');
 
 const nameSchema = z
   .string()
   .min(2, 'Name must be at least 2 characters')
   .max(50, 'Name must not exceed 50 characters')
   .trim()
-  .regex(/^[a-zA-Z\s]+$/, 'Name can only contain letters and spaces');
+  .regex(/^[\sA-Za-z]+$/, 'Name can only contain letters and spaces');
 
-const objectIdSchema = z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid ObjectId format');
+const objectIdSchema = z.string().regex(/^[\dA-Fa-f]{24}$/, 'Invalid ObjectId format');
 
 // Registration schema with comprehensive validation
 export const registerSchema = z.object({

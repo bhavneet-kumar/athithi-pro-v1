@@ -34,3 +34,21 @@ export interface IUpdateAgencyDTO {
   settings?: IAgencySettings;
   isActive?: boolean;
 }
+
+export interface AgencyQueryParams {
+  page?: string;
+  limit?: string;
+  search?: string;
+  isActive?: string;
+  sort?: string;
+  order?: string;
+}
+
+export interface AgencyFilters {
+  $or?: Array<Record<string, { $regex: string; $options: string }>>;
+  isActive?: string;
+}
+
+export interface AgencySortOptions {
+  [key: string]: 1 | -1;
+}

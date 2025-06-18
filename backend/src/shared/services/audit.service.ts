@@ -6,7 +6,7 @@ interface IAuditLog extends Document {
   ip: string;
   userAgent: string;
   status: 'success' | 'failure';
-  details: any;
+  details: Record<string, unknown>;
   timestamp: Date;
 }
 
@@ -49,12 +49,13 @@ const auditLogSchema = new Schema<IAuditLog>(
 const AuditLog = model<IAuditLog>('AuditLog', auditLogSchema);
 
 class AuditService {
+  // eslint-disable-next-line max-params
   async logLoginAttempt(
     userId: string | undefined,
     ip: string,
     userAgent: string,
     status: 'success' | 'failure',
-    details?: any,
+    details?: Record<string, unknown>,
   ): Promise<void> {
     await AuditLog.create({
       userId,
@@ -66,12 +67,13 @@ class AuditService {
     });
   }
 
+  // eslint-disable-next-line max-params
   async logPasswordReset(
     userId: string,
     ip: string,
     userAgent: string,
     status: 'success' | 'failure',
-    details?: any,
+    details?: Record<string, unknown>,
   ): Promise<void> {
     await AuditLog.create({
       userId,
@@ -83,12 +85,13 @@ class AuditService {
     });
   }
 
+  // eslint-disable-next-line max-params
   async logEmailVerification(
     userId: string,
     ip: string,
     userAgent: string,
     status: 'success' | 'failure',
-    details?: any,
+    details?: Record<string, unknown>,
   ): Promise<void> {
     await AuditLog.create({
       userId,

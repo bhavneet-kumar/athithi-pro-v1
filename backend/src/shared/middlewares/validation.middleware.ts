@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { ZodSchema, ZodError } from 'zod';
 
 import { PAGINATION_DEFAULT_LIMIT, PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from '../constant/validation';
-import { BadRequestError } from '../utils/CustomError';
+import { BadRequestError } from '../utils/customError';
 
 /**
  * Validation middleware factory

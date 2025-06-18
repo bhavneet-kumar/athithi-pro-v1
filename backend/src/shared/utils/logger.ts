@@ -5,9 +5,7 @@ const logger = createLogger({
   format: format.combine(
     format.colorize(), // color for console logs
     format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-    format.printf(({ timestamp, level, message }) => {
-      return `[${timestamp}] ${level}: ${message}`;
-    }),
+    format.printf(({ timestamp, level, message }) => `[${timestamp}] ${level}: ${message}`),
   ),
   transports: [
     new transports.Console(), // sirf console pe log karega

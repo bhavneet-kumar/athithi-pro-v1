@@ -12,20 +12,13 @@ export class LeadService extends BaseService<ILead> {
 
   async createLead(data: ILeadCreate): Promise<ILead> {
     try {
-      if (!data.agencyId) {
-        throw new BadRequestError('Agency ID is required');
-      }
+      console.log({
+        audit: data.audit,
+        body: data,
+        emote: '🔍',
+      });
       data.aiScore.value = Number(aiScoreCalculator.calculateScore(data as ILead));
 
-      data.aiScore.lastCalculated = new Date();
-      data.audit.createdAt = new Date();
-      data.audit.createdBy = data.agencyId;
-      data.audit.version = 1;
-      data.audit.isDeleted = false;
-      data.audit.deletedAt = null;
-      data.audit.deletedBy = null;
-      data.audit.updatedAt = new Date();
-      data.audit.updatedBy = data.agencyId;
       return await this.create(data);
     } catch (error) {
       if (error instanceof CustomError) {
@@ -120,8 +113,6 @@ export class LeadService extends BaseService<ILead> {
         $set: {
           'aiScore.value': Number(aiScoreCalculator.calculateScore(data as ILead)),
           'aiScore.lastCalculated': new Date(),
-          'audit.updatedAt': new Date(),
-          'audit.updatedBy': agencyId,
         },
         $inc: {
           'audit.version': 1,
@@ -149,7 +140,7 @@ export class LeadService extends BaseService<ILead> {
     }
   }
 
-  async delete(id: string, agencyId: string): Promise<ILead> {
+  async delete(id: string, agencyId: string, payload: ILeadUpdate): Promise<ILead> {
     try {
       if (!agencyId) {
         throw new BadRequestError('Agency ID is required');
@@ -160,16 +151,7 @@ export class LeadService extends BaseService<ILead> {
       const updatedLead = await this.model
         .findOneAndUpdate(
           { _id: id, agencyId },
-          {
-            $set: {
-              'audit.isDeleted': true,
-              'audit.deletedAt': new Date(),
-              'audit.deletedBy': agencyId,
-            },
-            $inc: {
-              'audit.version': 1,
-            },
-          },
+          { ...payload, $set: { 'audit.isDeleted': true }, $inc: { 'audit.version': 1 } },
           { new: true },
         )
         .lean({ virtuals: true })
@@ -190,7 +172,7 @@ export class LeadService extends BaseService<ILead> {
     }
   }
 
-  async changeStatus(id: string, newStatus: string, agencyId: string): Promise<ILead> {
+  async changeStatus(id: string, payload: ILeadUpdate, newStatus: string, agencyId: string): Promise<ILead> {
     try {
       if (!agencyId) {
         throw new BadRequestError('Agency ID is required');
@@ -206,10 +188,9 @@ export class LeadService extends BaseService<ILead> {
         .findOneAndUpdate(
           { _id: id, agencyId },
           {
+            ...payload,
             $set: {
               status: newStatus,
-              'audit.updatedAt': new Date(),
-              'audit.updatedBy': agencyId,
             },
             $inc: {
               'audit.version': 1,

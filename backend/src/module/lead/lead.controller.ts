@@ -14,6 +14,12 @@ import { leadService } from './lead.service';
 export class LeadController {
   async create(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
+      console.log({
+        audit: req.body.audit,
+        body: req.body,
+        emote: '🔍',
+        method: 'create',
+      });
       const lead = await leadService.createLead({ ...req.body, agencyId: req.user.agency as string });
       const response = new CreatedSuccess(lead, 'Lead created successfully.');
       res.status(response.httpCode).json(response);
@@ -60,7 +66,7 @@ export class LeadController {
 
   async delete(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      await leadService.delete(req.params.id, req.user.agency as string);
+      await leadService.delete(req.params.id, req.user.agency as string, req.body);
       const response = new NoContentSuccess('Lead deleted successfully.');
       res.status(response.httpCode).json(response);
     } catch (error) {
@@ -70,7 +76,7 @@ export class LeadController {
 
   async changeStatus(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const lead = await leadService.changeStatus(req.params.id, req.body.status, req.user.agency as string);
+      const lead = await leadService.changeStatus(req.params.id, req.body, req.body.status, req.user.agency as string);
       const response = new OkSuccess(lead, 'Lead status changed successfully.');
       res.status(response.httpCode).json(response);
     } catch (error) {

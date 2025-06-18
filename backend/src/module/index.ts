@@ -1,7 +1,7 @@
 import { Router } from 'express';
 
-import '../types/express/index';
 import { OkSuccess } from '../shared/utils/CustomSuccess';
+import '../types/express/index';
 
 import agencyRoutes from './agency/agency.routes';
 import authRoutes from './auth/auth.routes';

@@ -4,7 +4,10 @@ import { agencyRoleService } from '../../module/agency/agencyRole.service';
 import { UserRole } from '../../types/enum/user';
 import { ForbiddenError } from '../utils/CustomError';
 
+import { auditMiddleware } from './audit.middleware';
+
 interface AuthenticatedUser {
+  id: string;
   agency: string;
   role: {
     type: UserRole;
@@ -31,5 +34,7 @@ export const checkPermission =
       throw new ForbiddenError(`User does not have ${action} permission for ${resource}`);
     }
 
-    next();
+    auditMiddleware(req, res, next);
+
+    // next();
   };

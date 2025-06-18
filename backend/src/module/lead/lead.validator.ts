@@ -142,6 +142,10 @@ export const leadValidator = {
       .transform((str) => new Date(str))
       .optional(),
     followUpReason: z.string().optional(),
+    audit: z.object({
+      updatedBy: objectIdSchema.optional(),
+      deletedBy: objectIdSchema.optional(),
+    }),
   }),
 
   filterSchema: z.object({

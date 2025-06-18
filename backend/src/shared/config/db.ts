@@ -11,7 +11,7 @@ export const connectDB = async (): Promise<void> => {
   const mongoUri = process.env.MONGO_URI as string;
 
   if (!mongoUri) {
-    console.error('❌ MONGO_URI not found in .env');
+    console.error(' MONGO_URI not found in .env');
     throw new Error('MONGO_URI not found in .env');
   }
 

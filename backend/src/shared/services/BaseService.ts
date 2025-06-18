@@ -2,6 +2,11 @@ import { Document, Model, FilterQuery, UpdateQuery, QueryOptions } from 'mongoos
 
 import { NotFoundError, BadRequestError, InternalServerError, BusinessError } from '../utils/customError';
 
+// Constants for magic numbers
+const PAGINATION_DEFAULT_LIMIT = 10;
+const PAGINATION_MAX_LIMIT = 100;
+const DUPLICATE_KEY_ERROR_CODE = 11_000;
+
 /**
  * Abstract Base Service Class implementing CRUD operations
  * Follows OOP principles: Abstraction, Encapsulation, Inheritance
@@ -24,9 +29,11 @@ export abstract class BaseService<T extends Document> {
     try {
       const document = new this.model(data);
       return await document.save();
-    } catch (error: any) {
-      this.handleDatabaseError(error, 'create');
+    } catch (error) {
+      this.handleDatabaseError(error as unknown, 'create');
     }
+    // This line is unreachable, but TypeScript expects a return
+    throw new InternalServerError('Failed to create document');
   }
 
   /**
@@ -56,12 +63,13 @@ export abstract class BaseService<T extends Document> {
       }
 
       return document;
-    } catch (error: any) {
+    } catch (error) {
       if (error instanceof NotFoundError || error instanceof BadRequestError) {
         throw error;
       }
-      this.handleDatabaseError(error, 'findById');
+      this.handleDatabaseError(error as unknown, 'findById');
     }
+    throw new InternalServerError('Failed to find document by ID');
   }
 
   /**
@@ -73,9 +81,10 @@ export abstract class BaseService<T extends Document> {
   async find(filter: FilterQuery<T> = {}, options: QueryOptions = {}): Promise<T[]> {
     try {
       return await this.model.find(filter, null, options).exec();
-    } catch (error: any) {
-      this.handleDatabaseError(error, 'find');
+    } catch (error) {
+      this.handleDatabaseError(error as unknown, 'find');
     }
+    throw new InternalServerError('Failed to find documents');
   }
 
   /**
@@ -95,9 +104,10 @@ export abstract class BaseService<T extends Document> {
       }
 
       return await query.exec();
-    } catch (error: any) {
-      this.handleDatabaseError(error, 'findOne');
+    } catch (error) {
+      this.handleDatabaseError(error as unknown, 'findOne');
     }
+    throw new InternalServerError('Failed to find one document');
   }
 
   /**
@@ -119,12 +129,13 @@ export abstract class BaseService<T extends Document> {
       }
 
       return document;
-    } catch (error: any) {
+    } catch (error) {
       if (error instanceof NotFoundError || error instanceof BadRequestError) {
         throw error;
       }
-      this.handleDatabaseError(error, 'updateById');
+      this.handleDatabaseError(error as unknown, 'updateById');
     }
+    throw new InternalServerError('Failed to update document by ID');
   }
 
   /**
@@ -145,12 +156,13 @@ export abstract class BaseService<T extends Document> {
       }
 
       return document;
-    } catch (error: any) {
+    } catch (error) {
       if (error instanceof NotFoundError || error instanceof BadRequestError) {
         throw error;
       }
-      this.handleDatabaseError(error, 'deleteById');
+      this.handleDatabaseError(error as unknown, 'deleteById');
     }
+    throw new InternalServerError('Failed to delete document by ID');
   }
 
   /**
@@ -162,9 +174,10 @@ export abstract class BaseService<T extends Document> {
     try {
       const count = await this.model.countDocuments(filter).exec();
       return count > 0;
-    } catch (error: any) {
-      this.handleDatabaseError(error, 'exists');
+    } catch (error) {
+      this.handleDatabaseError(error as unknown, 'exists');
     }
+    throw new InternalServerError('Failed to check existence');
   }
 
   /**
@@ -178,8 +191,8 @@ export abstract class BaseService<T extends Document> {
   async paginate(
     filter: FilterQuery<T> = {},
     page = 1,
-    limit = 10,
-    sort: any = { createdAt: -1 },
+    limit = PAGINATION_DEFAULT_LIMIT,
+    sort?: { [key: string]: 1 | -1 },
   ): Promise<{
     documents: T[];
     totalDocuments: number;
@@ -193,10 +206,10 @@ export abstract class BaseService<T extends Document> {
         page = 1;
       }
       if (limit < 1) {
-        limit = 10;
+        limit = PAGINATION_DEFAULT_LIMIT;
       }
-      if (limit > 100) {
-        limit = 100;
+      if (limit > PAGINATION_MAX_LIMIT) {
+        limit = PAGINATION_MAX_LIMIT;
       } // Prevent too large requests
 
       const skip = (page - 1) * limit;
@@ -216,57 +229,61 @@ export abstract class BaseService<T extends Document> {
         hasNextPage: page < totalPages,
         hasPrevPage: page > 1,
       };
-    } catch (error: any) {
-      this.handleDatabaseError(error, 'paginate');
+    } catch (error) {
+      this.handleDatabaseError(error as unknown, 'paginate');
     }
+    throw new InternalServerError('Failed to paginate documents');
   }
 
-  /**
-   * Handle database errors and convert to appropriate CustomError
-   * @param error - The caught error
-   * @param operation - The operation that failed
-   */
-  protected handleDatabaseError(error: any, operation: string): never {
+  protected handleDatabaseError(error: unknown, operation: string): never {
+    // Try to narrow error type
+    const err = error as {
+      name?: string;
+      errors?: Record<string, { message: string }>;
+      path?: string;
+      value?: string;
+      code?: number;
+      keyValue?: Record<string, unknown>;
+      isOperational?: boolean;
+      message?: string;
+    };
+
     console.error(`Database error in ${this.modelName}.${operation}:`, error);
 
     // Mongoose validation error
-    if (error.name === 'ValidationError') {
-      const messages = Object.values(error.errors).map((err: any) => err.message);
+    if (err.name === 'ValidationError' && err.errors) {
+      const messages = Object.values(err.errors).map((e) => e.message);
       throw new BadRequestError(`Validation failed: ${messages.join(', ')}`);
     }
 
     // Mongoose cast error (invalid ObjectId)
-    if (error.name === 'CastError') {
-      throw new BadRequestError(`Invalid ${error.path}: ${error.value}`);
+    if (err.name === 'CastError' && err.path && err.value) {
+      throw new BadRequestError(`Invalid ${err.path}: ${err.value}`);
     }
 
     // Duplicate key error
-    if (error.code === 11_000) {
-      const field = Object.keys(error.keyValue || {}).join(', ');
+    if (err.code === DUPLICATE_KEY_ERROR_CODE) {
+      const field = Object.keys(err.keyValue || {}).join(', ');
       throw new BusinessError(`Duplicate value for field: ${field}`);
     }
 
     // If it's already a CustomError, re-throw it
-    if (error.isOperational) {
-      throw error;
+    if (err.isOperational) {
+      throw error as Error;
     }
 
     // Default to internal server error
     throw new InternalServerError(`Database operation failed: ${operation}`);
   }
 
-  /**
-   * Validate input data against schema
-   * @param data - Data to validate
-   * @param schema - Zod schema
-   * @returns Validated data
-   */
-  protected validateInput<K>(data: any, schema: any): K {
+  protected validateInput<K>(data: unknown, schema: { parse: (input: unknown) => K }): K {
     try {
       return schema.parse(data);
-    } catch (error: any) {
-      if (error.errors) {
-        const messages = error.errors.map((err: any) => `${err.path.join('.')}: ${err.message}`);
+    } catch (error) {
+      // Try to narrow error type
+      const err = error as { errors?: Array<{ path: string[]; message: string }> };
+      if (err.errors) {
+        const messages = err.errors.map((e) => `${e.path.join('.')}: ${e.message}`);
         throw new BadRequestError(`Validation failed: ${messages.join(', ')}`);
       }
       throw new BadRequestError('Invalid input data');

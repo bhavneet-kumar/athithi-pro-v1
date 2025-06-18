@@ -17,6 +17,8 @@ class EmailService {
   }
 
   async sendVerificationEmail(email: string, token: string): Promise<void> {
+    console.log('email', email);
+    console.log('token', token);
     // const verificationUrl = `${config.app.url}/api/auth/verify-email/${token}`;
     // await this.transporter.sendMail({
     //   from: config.email.from,
@@ -31,6 +33,8 @@ class EmailService {
   }
 
   async sendPasswordResetEmail(email: string, token: string): Promise<void> {
+    console.log('email', email);
+    console.log('token', token);
     // const resetUrl = `${config.app.url}/api/auth/reset-password/${token}`;
     // await this.transporter.sendMail({
     //   from: config.email.from,

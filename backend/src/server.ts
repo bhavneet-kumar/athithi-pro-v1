@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import app from './app';
-import { ApplicationServer } from './shared/core/ApplicationServer';
+import { ApplicationServer } from './shared/core/applicationServer';
 /**
  * Server startup file
  * Creates and starts the application server
@@ -15,6 +15,7 @@ const startApplication = async (): Promise<void> => {
     await server.start();
   } catch (error) {
     console.error('Fatal error during server startup:', error);
+    // eslint-disable-next-line unicorn/no-process-exit
     process.exit(1);
   }
 };

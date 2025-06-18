@@ -50,5 +50,5 @@ export interface AgencyFilters {
 }
 
 export interface AgencySortOptions {
-  [key: string]: number;
+  [key: string]: 1 | -1;
 }

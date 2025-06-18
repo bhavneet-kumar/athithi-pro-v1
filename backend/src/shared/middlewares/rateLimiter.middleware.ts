@@ -1,15 +1,14 @@
 import rateLimit from 'express-rate-limit';
-import Redis from 'ioredis';
 import RedisStore from 'rate-limit-redis';
 
-import { config } from '../config';
+import { getRedisClient } from '../config/db';
 import {
   LOGIN_RATE_LIMITER_TIME,
   PASSWORD_RESET_RATE_LIMITER_TIME,
   SIGNUP_RATE_LIMITER_TIME,
 } from '../constant/timeValues';
 
-const redis = new Redis(config.redis.url);
+const redis = getRedisClient();
 
 // Signup rate limiter: 5 attempts per hour per IP
 export const signupLimiter = rateLimit({

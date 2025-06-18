@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 
-import { BadRequestError, InternalServerError } from '../../shared/utils/customError';
+import { BadRequestError } from '../../shared/utils/customError';
+import { CreatedSuccess } from '../../shared/utils/customSuccess';
 
 import { authService } from './auth.service';
 
@@ -12,17 +13,14 @@ export class AuthController {
   /**
    * Register a new user
    * Validation is handled by middleware
-   * @param req
-   * @param res
-   * @param next
+   * @param req Express request object containing user registration data
+   * @param res Express response object
+   * @param next Express next function for error handling
    */
   async register(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       await authService.register(req.body);
-      res.status(201).json({
-        success: true,
-        message: 'User created successfully. Please check your email for verification.',
-      });
+      res.customSuccess(new CreatedSuccess('User created successfully. Please check your email for verification.'));
     } catch (error) {
       next(error);
     }
@@ -30,9 +28,9 @@ export class AuthController {
 
   /**
    * Verify user email with token
-   * @param req
-   * @param res
-   * @param next
+   * @param req Express request object containing verification token in params
+   * @param res Express response object
+   * @param next Express next function for error handling
    */
   async verifyEmail(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
@@ -55,9 +53,9 @@ export class AuthController {
   /**
    * User login
    * Validation is handled by middleware
-   * @param req
-   * @param res
-   * @param next
+   * @param req Express request object containing login credentials
+   * @param res Express response object
+   * @param next Express next function for error handling
    */
   async login(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
@@ -73,9 +71,9 @@ export class AuthController {
 
   /**
    * Send password reset email
-   * @param req
-   * @param res
-   * @param next
+   * @param req Express request object containing user's email in body
+   * @param res Express response object
+   * @param next Express next function for error handling
    */
   async forgotPassword(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
@@ -92,9 +90,9 @@ export class AuthController {
 
   /**
    * Reset password with token
-   * @param req
-   * @param res
-   * @param next
+   * @param req Express request object containing reset token in params and new password in body
+   * @param res Express response object
+   * @param next Express next function for error handling
    */
   async resetPassword(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
@@ -116,9 +114,9 @@ export class AuthController {
 
   /**
    * Refresh authentication token
-   * @param req
-   * @param res
-   * @param next
+   * @param req Express request object containing refresh token in body
+   * @param res Express response object
+   * @param next Express next function for error handling
    */
   async refreshToken(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
@@ -134,14 +132,14 @@ export class AuthController {
 
   /**
    * Get current user profile (protected route)
-   * @param req
-   * @param res
-   * @param next
+   * @param req Express request object with user info attached by auth middleware
+   * @param res Express response object
+   * @param next Express next function for error handling
    */
   async getProfile(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       // Assuming user is attached to request by auth middleware
-      const userId = (req as any).user?.id;
+      const userId = (req as Request & { user: { id: string } }).user?.id;
 
       if (!userId) {
         throw new BadRequestError('User ID not found in request');
@@ -169,9 +167,9 @@ export class AuthController {
 
   /**
    * Logout user (invalidate token on client side)
-   * @param req
-   * @param res
-   * @param next
+   * @param req Express request object
+   * @param res Express response object
+   * @param next Express next function for error handling
    */
   async logout(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {

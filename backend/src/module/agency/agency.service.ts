@@ -1,5 +1,5 @@
 import { Agency } from '../../shared/models/agency.model';
-import { BaseService } from '../../shared/services/BaseService';
+import { BaseService } from '../../shared/services/baseService';
 import {
   BadRequestError,
   NotFoundError,
@@ -8,7 +8,7 @@ import {
   CustomError,
 } from '../../shared/utils/customError';
 
-import { IAgency } from './agency.interface';
+import { AgencyFilters, AgencySortOptions, IAgency } from './agency.interface';
 import { CreateAgencyInput, UpdateAgencyInput } from './agency.validator';
 import { agencyRoleService } from './agencyRole.service';
 
@@ -18,6 +18,8 @@ import { agencyRoleService } from './agencyRole.service';
  * Implements business logic specific to agency management
  */
 export class AgencyService extends BaseService<IAgency> {
+  private static readonly UNKNOWN_ERROR_MESSAGE = 'Unknown error occurred';
+
   constructor() {
     super(Agency, 'Agency');
   }
@@ -49,11 +51,12 @@ export class AgencyService extends BaseService<IAgency> {
       await agencyRoleService.createDefaultRoles(agency.id.toString());
 
       return agency;
-    } catch (error: any) {
+    } catch (error) {
       if (error instanceof CustomError) {
         throw error;
       }
-      throw new InternalServerError(`Agency creation failed: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : AgencyService.UNKNOWN_ERROR_MESSAGE;
+      throw new InternalServerError(`Agency creation failed: ${errorMessage}`);
     }
   }
 
@@ -73,11 +76,12 @@ export class AgencyService extends BaseService<IAgency> {
         throw new NotFoundError(`Agency not found with ID: ${id}`);
       }
       return agency;
-    } catch (error: any) {
+    } catch (error) {
       if (error instanceof CustomError) {
         throw error;
       }
-      throw new InternalServerError(`Failed to retrieve agency: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : AgencyService.UNKNOWN_ERROR_MESSAGE;
+      throw new InternalServerError(`Failed to retrieve agency: ${errorMessage}`);
     }
   }
 
@@ -93,44 +97,53 @@ export class AgencyService extends BaseService<IAgency> {
         throw new BadRequestError('Agency ID is required');
       }
 
-      // Check if agency exists
-      const existingAgency = await this.findById(id);
-      if (!existingAgency) {
-        throw new NotFoundError(`Agency not found with ID: ${id}`);
-      }
-
-      // If updating code, check for uniqueness
-      if (data.code && data.code !== existingAgency.code) {
-        const codeExists = await this.findOne({
-          code: data.code,
-          _id: { $ne: id },
-        });
-        if (codeExists) {
-          throw new BusinessError(`Agency with code '${data.code}' already exists`);
-        }
-      }
-
-      // If updating domain, check for uniqueness
-      if (data.domain && data.domain !== existingAgency.domain) {
-        const domainExists = await this.findOne({
-          domain: data.domain,
-          _id: { $ne: id },
-        });
-        if (domainExists) {
-          throw new BusinessError(`Agency with domain '${data.domain}' already exists`);
-        }
-      }
+      const existingAgency = await this.getExistingAgency(id);
+      await this.validateCodeUniqueness(id, data, existingAgency);
+      await this.validateDomainUniqueness(id, data, existingAgency);
 
       const updatedAgency = await this.updateById(id, data);
       if (!updatedAgency) {
         throw new NotFoundError(`Agency not found with ID: ${id}`);
       }
       return updatedAgency;
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error instanceof CustomError) {
         throw error;
       }
-      throw new InternalServerError(`Agency update failed: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : AgencyService.UNKNOWN_ERROR_MESSAGE;
+      throw new InternalServerError(`Agency update failed: ${errorMessage}`);
+    }
+  }
+
+  private async getExistingAgency(id: string): Promise<IAgency> {
+    const existingAgency = await this.findById(id);
+    if (!existingAgency) {
+      throw new NotFoundError(`Agency not found with ID: ${id}`);
+    }
+    return existingAgency;
+  }
+
+  private async validateCodeUniqueness(id: string, data: UpdateAgencyInput, existingAgency: IAgency): Promise<void> {
+    if (data.code && data.code !== existingAgency.code) {
+      const codeExists = await this.findOne({
+        code: data.code,
+        _id: { $ne: id },
+      });
+      if (codeExists) {
+        throw new BusinessError(`Agency with code '${data.code}' already exists`);
+      }
+    }
+  }
+
+  private async validateDomainUniqueness(id: string, data: UpdateAgencyInput, existingAgency: IAgency): Promise<void> {
+    if (data.domain && data.domain !== existingAgency.domain) {
+      const domainExists = await this.findOne({
+        domain: data.domain,
+        _id: { $ne: id },
+      });
+      if (domainExists) {
+        throw new BusinessError(`Agency with domain '${data.domain}' already exists`);
+      }
     }
   }
 
@@ -159,11 +172,12 @@ export class AgencyService extends BaseService<IAgency> {
       if (!deletedAgency) {
         throw new NotFoundError(`Agency not found with ID: ${id}`);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error instanceof CustomError) {
         throw error;
       }
-      throw new InternalServerError(`Agency deletion failed: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : AgencyService.UNKNOWN_ERROR_MESSAGE;
+      throw new InternalServerError(`Agency deletion failed: ${errorMessage}`);
     }
   }
 
@@ -176,10 +190,10 @@ export class AgencyService extends BaseService<IAgency> {
    * @returns Paginated agencies
    */
   async listAgencies(
-    filters: any = {},
-    page = 1,
-    limit = 10,
-    sort: any = { createdAt: -1 },
+    filters: AgencyFilters,
+    page: number,
+    limit: number,
+    sort: AgencySortOptions,
   ): Promise<{
     agencies: IAgency[];
     totalAgencies: number;
@@ -199,11 +213,12 @@ export class AgencyService extends BaseService<IAgency> {
         hasNextPage: result.hasNextPage,
         hasPrevPage: result.hasPrevPage,
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error instanceof CustomError) {
         throw error;
       }
-      throw new InternalServerError(`Failed to list agencies: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : AgencyService.UNKNOWN_ERROR_MESSAGE;
+      throw new InternalServerError(`Failed to list agencies: ${errorMessage}`);
     }
   }
 
@@ -219,11 +234,12 @@ export class AgencyService extends BaseService<IAgency> {
       }
 
       return await this.findOne({ code: code.toUpperCase() });
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error instanceof CustomError) {
         throw error;
       }
-      throw new InternalServerError(`Failed to find agency by code: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : AgencyService.UNKNOWN_ERROR_MESSAGE;
+      throw new InternalServerError(`Failed to find agency by code: ${errorMessage}`);
     }
   }
 
@@ -239,11 +255,12 @@ export class AgencyService extends BaseService<IAgency> {
       }
 
       return await this.findOne({ domain });
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error instanceof CustomError) {
         throw error;
       }
-      throw new InternalServerError(`Failed to find agency by domain: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : AgencyService.UNKNOWN_ERROR_MESSAGE;
+      throw new InternalServerError(`Failed to find agency by domain: ${errorMessage}`);
     }
   }
 
@@ -253,7 +270,7 @@ export class AgencyService extends BaseService<IAgency> {
    * @param settings - Settings object
    * @returns Updated agency
    */
-  async updateAgencySettings(id: string, settings: any): Promise<IAgency> {
+  async updateAgencySettings(id: string, settings: Record<string, unknown>): Promise<IAgency> {
     try {
       if (!id) {
         throw new BadRequestError('Agency ID is required');
@@ -264,11 +281,12 @@ export class AgencyService extends BaseService<IAgency> {
         throw new NotFoundError(`Agency not found with ID: ${id}`);
       }
       return updatedAgency;
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error instanceof CustomError) {
         throw error;
       }
-      throw new InternalServerError(`Failed to update agency settings: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : AgencyService.UNKNOWN_ERROR_MESSAGE;
+      throw new InternalServerError(`Agency settings update failed: ${errorMessage}`);
     }
   }
 }

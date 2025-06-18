@@ -7,17 +7,18 @@ import { AgencyFilters, AgencyQueryParams, AgencySortOptions } from './agency.in
 import { agencyService } from './agency.service';
 
 /**
- * Agency Controller Class
- * Implements controller layer with proper error handling and response formatting
- * Follows OOP principles and uses validation middleware for data validation
+ * Represents the controller for agency-related operations.
+ * Handles error management and response formatting.
+ * Utilizes validation middleware for data validation.
  */
 export class AgencyController {
   /**
-   * Create a new agency
-   * Validation is handled by middleware
-   * @param req
-   * @param res
-   * @param next
+   * Creates a new agency.
+   * Validation is handled by middleware.
+   * @param req - Express request object
+   * @param res - Express response object
+   * @param next - Express next function
+   * @returns {Promise<void>}
    */
   async createAgency(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
@@ -42,10 +43,11 @@ export class AgencyController {
   }
 
   /**
-   * Get agency by ID
-   * @param req
-   * @param res
-   * @param next
+   * Retrieves an agency by its ID.
+   * @param req - Express request object
+   * @param res - Express response object
+   * @param next - Express next function
+   * @returns {Promise<void>}
    */
   async getAgency(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
@@ -73,11 +75,12 @@ export class AgencyController {
   }
 
   /**
-   * Update agency
-   * Validation is handled by middleware
-   * @param req
-   * @param res
-   * @param next
+   * Updates an existing agency.
+   * Validation is handled by middleware.
+   * @param req - Express request object
+   * @param res - Express response object
+   * @param next - Express next function
+   * @returns {Promise<void>}
    */
   async updateAgency(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
@@ -106,10 +109,11 @@ export class AgencyController {
   }
 
   /**
-   * Delete agency
-   * @param req
-   * @param res
-   * @param next
+   * Deletes an agency.
+   * @param req - Express request object
+   * @param res - Express response object
+   * @param next - Express next function
+   * @returns {Promise<void>}
    */
   async deleteAgency(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
@@ -130,16 +134,17 @@ export class AgencyController {
   }
 
   /**
-   * List agencies with pagination and filtering
-   * @param req
-   * @param res
-   * @param next
+   * Lists agencies with pagination and filtering.
+   * @param req - Express request object
+   * @param res - Express response object
+   * @param next - Express next function
+   * @returns {Promise<void>}
    */
   async listAgencies(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { page, limit, search, isActive, sort, order } = req.query as AgencyQueryParams;
 
-      // Build filters
+      // Build filters for querying agencies
       const filters: AgencyFilters = {};
       if (search) {
         filters.$or = [
@@ -152,7 +157,7 @@ export class AgencyController {
         filters.isActive = isActive;
       }
 
-      // Build sort
+      // Build sort options for querying agencies
       const sortObj: AgencySortOptions = {};
       sortObj[sort || 'createdAt'] = order === 'asc' ? 1 : -1;
 
@@ -186,10 +191,11 @@ export class AgencyController {
   }
 
   /**
-   * Get agency by code
-   * @param req
-   * @param res
-   * @param next
+   * Retrieves an agency by its code.
+   * @param req - Express request object
+   * @param res - Express response object
+   * @param next - Express next function
+   * @returns {Promise<void>}
    */
   async getAgencyByCode(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
@@ -222,10 +228,11 @@ export class AgencyController {
   }
 
   /**
-   * Update agency settings
-   * @param req
-   * @param res
-   * @param next
+   * Updates the settings of an agency.
+   * @param req - Express request object
+   * @param res - Express response object
+   * @param next - Express next function
+   * @returns {Promise<void>}
    */
   async updateAgencySettings(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
@@ -250,4 +257,7 @@ export class AgencyController {
   }
 }
 
+/**
+ * Instance of AgencyController for use in routes.
+ */
 export const agencyController = new AgencyController();

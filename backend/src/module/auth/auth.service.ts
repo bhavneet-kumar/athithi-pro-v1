@@ -1,16 +1,21 @@
 import jwt, { SignOptions, Secret } from 'jsonwebtoken';
-import { Types } from 'mongoose';
 
 import { config } from '../../shared/config/index';
+import {
+  LOGIN_RATE_LIMITER_TIME,
+  MINUTES_IN_MILLISECONDS,
+  THIRTY_MINUTES_IN_MILLISECONDS,
+  TWENTY_FOUR_HOURS_IN_MILLISECONDS,
+} from '../../shared/constant/timeValues';
+import { MAX_LOGIN_ATTEMPTS } from '../../shared/constant/validation';
 import { Role } from '../../shared/models/role.model';
 import { User, IUser } from '../../shared/models/user.model';
-import { BaseService } from '../../shared/services/BaseService';
+import { BaseService } from '../../shared/services/baseService';
 import { emailService } from '../../shared/services/email.service';
 import {
   BadRequestError,
   UnauthorizedError,
   ForbiddenError,
-  NotFoundError,
   BusinessError,
   InternalServerError,
   CustomError,
@@ -30,10 +35,10 @@ export class AuthService extends BaseService<IUser> {
   };
 
   // Constants for business rules
-  private readonly MAX_LOGIN_ATTEMPTS = 5;
-  private readonly ACCOUNT_LOCK_TIME = 15 * 60 * 1000; // 15 minutes
-  private readonly EMAIL_VERIFICATION_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours
-  private readonly PASSWORD_RESET_EXPIRY = 30 * 60 * 1000; // 30 minutes
+  private readonly MAX_LOGIN_ATTEMPTS = MAX_LOGIN_ATTEMPTS;
+  private readonly ACCOUNT_LOCK_TIME = LOGIN_RATE_LIMITER_TIME; // 15 minutes
+  private readonly EMAIL_VERIFICATION_EXPIRY = TWENTY_FOUR_HOURS_IN_MILLISECONDS; // 24 hours
+  private readonly PASSWORD_RESET_EXPIRY = THIRTY_MINUTES_IN_MILLISECONDS; // 30 minutes
 
   constructor() {
     super(User, 'User');
@@ -64,8 +69,11 @@ export class AuthService extends BaseService<IUser> {
       await user.generateEmailVerificationToken();
 
       // Send verification email
-      await emailService.sendVerificationEmail(user.email, user.emailVerificationToken!);
-    } catch (error: any) {
+      if (!user.emailVerificationToken) {
+        throw new InternalServerError('Failed to generate email verification token');
+      }
+      await emailService.sendVerificationEmail(user.email, user.emailVerificationToken);
+    } catch (error) {
       if (error instanceof CustomError) {
         throw error;
       }
@@ -89,10 +97,10 @@ export class AuthService extends BaseService<IUser> {
       }
 
       user.isEmailVerified = true;
-      user.emailVerificationToken = undefined;
-      user.emailVerificationExpires = undefined;
+      user.emailVerificationToken = null;
+      user.emailVerificationExpires = null;
       await user.save();
-    } catch (error: any) {
+    } catch (error) {
       if (error instanceof CustomError) {
         throw error;
       }
@@ -110,7 +118,7 @@ export class AuthService extends BaseService<IUser> {
 
       // Check if account is locked
       if (user.accountLockedUntil && user.accountLockedUntil > new Date()) {
-        const lockTimeRemaining = Math.ceil((user.accountLockedUntil.getTime() - Date.now()) / 60_000);
+        const lockTimeRemaining = Math.ceil((user.accountLockedUntil.getTime() - Date.now()) / MINUTES_IN_MILLISECONDS);
         throw new ForbiddenError(`Account is locked. Please try again in ${lockTimeRemaining} minutes.`);
       }
 
@@ -136,7 +144,7 @@ export class AuthService extends BaseService<IUser> {
           lastName: user.lastName,
         },
       };
-    } catch (error: any) {
+    } catch (error) {
       if (error instanceof CustomError) {
         throw error;
       }
@@ -151,7 +159,10 @@ export class AuthService extends BaseService<IUser> {
     }
 
     await user.generatePasswordResetToken();
-    await emailService.sendPasswordResetEmail(user.email, user.passwordResetToken!);
+    if (!user.passwordResetToken) {
+      throw new InternalServerError('Failed to generate password reset token');
+    }
+    await emailService.sendPasswordResetEmail(user.email, user.passwordResetToken);
   }
 
   async resetPassword(token: string, data: IPasswordResetInput): Promise<void> {
@@ -166,10 +177,10 @@ export class AuthService extends BaseService<IUser> {
       }
 
       user.password = data.password;
-      user.passwordResetToken = undefined;
-      user.passwordResetExpires = undefined;
+      user.passwordResetToken = null;
+      user.passwordResetExpires = null;
       await user.save();
-    } catch (error: any) {
+    } catch (error) {
       if (error instanceof CustomError) {
         throw error;
       }
@@ -189,7 +200,7 @@ export class AuthService extends BaseService<IUser> {
       const token = jwt.sign({ id: user._id }, config.jwt.secret as Secret, this.tokenOptions);
 
       return { token };
-    } catch (error: any) {
+    } catch (error) {
       if (error instanceof CustomError) {
         throw error;
       }
@@ -199,7 +210,7 @@ export class AuthService extends BaseService<IUser> {
 
   /**
    * Handle failed login attempts with account locking logic
-   * @param user
+   * @param user The user object whose failed login attempts should be incremented and possibly locked
    */
   private async handleFailedLogin(user: IUser): Promise<void> {
     try {
@@ -211,7 +222,7 @@ export class AuthService extends BaseService<IUser> {
       }
 
       await user.save();
-    } catch (error: any) {
+    } catch (error) {
       if (error instanceof CustomError) {
         throw error;
       }
@@ -221,14 +232,14 @@ export class AuthService extends BaseService<IUser> {
 
   /**
    * Reset failed login attempts after successful login
-   * @param user
+   * @param user The user object whose failed login attempts should be reset
    */
   private async resetFailedLoginAttempts(user: IUser): Promise<void> {
     try {
       user.failedLoginAttempts = 0;
-      user.accountLockedUntil = undefined;
+      user.accountLockedUntil = null;
       await user.save();
-    } catch (error: any) {
+    } catch (error) {
       if (error instanceof CustomError) {
         throw error;
       }
@@ -238,7 +249,9 @@ export class AuthService extends BaseService<IUser> {
 
   /**
    * Generate JWT tokens
-   * @param userId
+   * @param userId The user ID for which to generate tokens
+   * @throws {InternalServerError} If token generation fails
+   * @returns The generated tokens
    */
   private generateTokens(userId: string): { token: string; refreshToken: string } {
     try {
@@ -247,7 +260,7 @@ export class AuthService extends BaseService<IUser> {
       const refreshToken = jwt.sign({ id: userId }, config.jwt.refreshPrivateKey as Secret, this.refreshTokenOptions);
 
       return { token, refreshToken };
-    } catch (error: any) {
+    } catch (error) {
       if (error instanceof CustomError) {
         throw error;
       }

@@ -11,16 +11,21 @@ class CustomSuccess<T = unknown> {
   static ACCEPTED = 202;
   static NO_CONTENT = 204;
 
-  constructor(name: string, httpCode: number, message: string, data: T | null = null, meta?: Record<string, unknown>) {
-    this.name = name;
-    this.httpCode = httpCode;
-    this.message = message;
-    this.data = data;
+  constructor(options: {
+    name: string;
+    httpCode: number;
+    message: string;
+    data?: T | null;
+    meta?: Record<string, unknown>;
+  }) {
+    this.name = options.name;
+    this.httpCode = options.httpCode;
+    this.message = options.message;
+    this.data = options.data ?? null;
     this.success = true;
-    this.meta = meta;
+    this.meta = options.meta;
   }
 }
-//test
 
 export class OkSuccess<T = unknown> extends CustomSuccess<T> {
   constructor(
@@ -28,7 +33,13 @@ export class OkSuccess<T = unknown> extends CustomSuccess<T> {
     message: string = 'Request completed successfully',
     meta?: Record<string, unknown>,
   ) {
-    super('OK', CustomSuccess.OK, message, data, meta);
+    super({
+      name: 'OK',
+      httpCode: CustomSuccess.OK,
+      message,
+      data,
+      meta,
+    });
   }
 }
 
@@ -38,19 +49,37 @@ export class CreatedSuccess<T = unknown> extends CustomSuccess<T> {
     message: string = 'Resource created successfully',
     meta?: Record<string, unknown>,
   ) {
-    super('CREATED', CustomSuccess.CREATED, message, data, meta);
+    super({
+      name: 'CREATED',
+      httpCode: CustomSuccess.CREATED,
+      message,
+      data,
+      meta,
+    });
   }
 }
 
 export class AcceptedSuccess<T = unknown> extends CustomSuccess<T> {
   constructor(data: T | null = null, message: string = 'Request accepted', meta?: Record<string, unknown>) {
-    super('ACCEPTED', CustomSuccess.ACCEPTED, message, data, meta);
+    super({
+      name: 'ACCEPTED',
+      httpCode: CustomSuccess.ACCEPTED,
+      message,
+      data,
+      meta,
+    });
   }
 }
 
 export class NoContentSuccess extends CustomSuccess<null> {
   constructor(message: string = 'No content', meta?: Record<string, unknown>) {
-    super('NO_CONTENT', CustomSuccess.NO_CONTENT, message, null, meta);
+    super({
+      name: 'NO_CONTENT',
+      httpCode: CustomSuccess.NO_CONTENT,
+      message,
+      data: null,
+      meta,
+    });
   }
 }
 

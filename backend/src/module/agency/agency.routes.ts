@@ -17,7 +17,7 @@ import {
 const router = Router();
 
 /**
-=* @swagger
+* @swagger
  * /agencies:
  *   post:
  *     summary: Create a new agency
@@ -68,7 +68,7 @@ router.post(
 );
 
 /**
-=* @swagger
+* @swagger
  * /agencies:
  *   get:
  *     summary: List agencies with pagination and filtering
@@ -122,8 +122,8 @@ router.get(
 );
 
 /**
- =* @swagger
- *=/agencies/{agencyId}:
+ * @swagger
+ * /agencies/{agencyId}:
  *   get:
  *     summary: Get agency by ID
  *     tags: [Agencies]
@@ -148,7 +148,7 @@ router.get(
 );
 
 /**
- =* @swagger
+ * @swagger
  * /agencies/code/{code}:
  *   get:
  *     summary: Get agency by code
@@ -174,7 +174,7 @@ router.get(
 );
 
 /**
- =* @swagger
+ * @swagger
  * /agencies/{agencyId}:
  *   put:
  *     summary: Update agency
@@ -223,7 +223,7 @@ router.put(
 );
 
 /**
- =* @swagger
+ * @swagger
  * /agencies/{agencyId}/settings:
  *   patch:
  *     summary: Update agency settings
@@ -275,7 +275,7 @@ router.patch(
 );
 
 /**
- =* @swagger
+ * @swagger
  * /agencies/{agencyId}:
  *   delete:
  *     summary: Delete agency

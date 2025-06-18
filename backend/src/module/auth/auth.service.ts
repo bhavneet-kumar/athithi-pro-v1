@@ -10,7 +10,7 @@ import {
 import { MAX_LOGIN_ATTEMPTS } from '../../shared/constant/validation';
 import { Role } from '../../shared/models/role.model';
 import { User, IUser } from '../../shared/models/user.model';
-import { BaseService } from '../../shared/services/baseService';
+import { BaseService } from '../../shared/services/base.service';
 import { emailService } from '../../shared/services/email.service';
 import {
   BadRequestError,

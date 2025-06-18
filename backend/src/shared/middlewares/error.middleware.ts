@@ -4,7 +4,7 @@ import { Request, Response, NextFunction } from 'express';
 import { MongooseError } from 'mongoose';
 import http from 'http';
 import { DUPLICATE_KEY_ERROR_CODE } from '../constant/validation';
-import { CustomError } from '../utils/CustomError';
+import { CustomError } from '../utils/customError';
 
 const HTTP_STATUS = {
   INTERNAL_SERVER_ERROR: 500,

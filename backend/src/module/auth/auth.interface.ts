@@ -1,5 +1,3 @@
-import { Document } from 'mongoose';
-
 export interface IAuthTokens {
   token: string;
   refreshToken: string;

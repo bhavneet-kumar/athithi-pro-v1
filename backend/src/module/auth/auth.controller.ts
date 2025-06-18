@@ -1,16 +1,22 @@
 // src/module/auth/auth.controller.ts
 
 import { Request, Response, NextFunction } from 'express';
-import { BadRequestError } from '../../shared/utils/CustomError';
-import { authService } from './auth.service';
+
+import { BadRequestError } from '../../shared/utils/customError';
 import { CreatedSuccess, OkSuccess, NoContentSuccess } from '../../shared/utils/CustomSuccess';
 
+import { authService } from './auth.service';
+
 // Optional: extend Request to include user
-interface RequestWithUser extends Request {
-  user?: { id: string };
-}
 
 export class AuthController {
+  /**
+   * Register a new user
+   * Validation is handled by middleware
+   * @param req Express request object containing user registration data
+   * @param res Express response object
+   * @param next Express next function for error handling
+   */
   async register(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       if (!req.body?.email || !req.body?.password) {
@@ -25,6 +31,12 @@ export class AuthController {
     }
   }
 
+  /**
+   * Verify user email with token
+   * @param req Express request object containing verification token in params
+   * @param res Express response object
+   * @param next Express next function for error handling
+   */
   async verifyEmail(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { token } = req.params;
@@ -36,6 +48,13 @@ export class AuthController {
     }
   }
 
+  /**
+   * User login
+   * Validation is handled by middleware
+   * @param req Express request object containing login credentials
+   * @param res Express response object
+   * @param next Express next function for error handling
+   */
   async login(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { email, password } = req.body;
@@ -49,6 +68,12 @@ export class AuthController {
     }
   }
 
+  /**
+   * Send password reset email
+   * @param req Express request object containing user's email in body
+   * @param res Express response object
+   * @param next Express next function for error handling
+   */
   async forgotPassword(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { email } = req.body;
@@ -60,6 +85,12 @@ export class AuthController {
     }
   }
 
+  /**
+   * Reset password with token
+   * @param req Express request object containing reset token in params and new password in body
+   * @param res Express response object
+   * @param next Express next function for error handling
+   */
   async resetPassword(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { token } = req.params;
@@ -71,6 +102,12 @@ export class AuthController {
     }
   }
 
+  /**
+   * Refresh authentication token
+   * @param req Express request object containing refresh token in body
+   * @param res Express response object
+   * @param next Express next function for error handling
+   */
   async refreshToken(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { refreshToken } = req.body;
@@ -84,10 +121,21 @@ export class AuthController {
     }
   }
 
-  async getProfile(req: RequestWithUser, res: Response, next: NextFunction): Promise<void> {
+  /**
+   * Get current user profile (protected route)
+   * @param req Express request object with user info attached by auth middleware
+   * @param res Express response object
+   * @param next Express next function for error handling
+   */
+  async getProfile(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = req.user?.id;
-      if (!userId) throw new BadRequestError('User ID not found in request');
+      // Assuming user is attached to request by auth middleware
+      const userId = (req as Request & { user: { id: string } }).user?.id;
+
+      if (!userId) {
+        throw new BadRequestError('User ID not found in request');
+      }
+
       const user = await authService.findById(userId, ['role', 'agency']);
       const profile = {
         id: user.id,
@@ -105,6 +153,12 @@ export class AuthController {
     }
   }
 
+  /**
+   * Logout user (invalidate token on client side)
+   * @param req Express request object
+   * @param res Express response object
+   * @param next Express next function for error handling
+   */
   async logout(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       res.customSuccess(new NoContentSuccess('Logged out successfully'));

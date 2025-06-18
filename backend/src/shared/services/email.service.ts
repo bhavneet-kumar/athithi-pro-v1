@@ -1,5 +1,6 @@
 // src/shared/services/email.service.ts
 import nodemailer from 'nodemailer';
+
 import { config } from '../config';
 
 class EmailService {
@@ -38,7 +39,6 @@ class EmailService {
 `;
 
     await this.transporter.sendMail({
-
       from: `"AthithiPro Team" <no-reply@athithipro.com>`,
       to,
       subject,
@@ -75,7 +75,6 @@ class EmailService {
       html,
     });
   }
-
 }
 
 export const emailService = new EmailService();

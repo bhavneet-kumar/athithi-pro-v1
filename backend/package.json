@@ -2,11 +2,19 @@
   "name": "athitipro-leads-crm",
   "version": "1.0.0",
   "scripts": {
+    "prestart": "echo '🔍 Running pre-start linting checks...' && npm run lint-fix && npm run lint-check && echo '✅ All linting checks passed! 🚀 Server can start safely.'",
     "start": "ts-node src/server.ts",
+    "predev": "echo '🔍 Running pre-dev linting checks...' && npm run lint-fix && npm run lint-check-errors && echo '✅ Critical linting checks passed! 🚀 Dev server can start safely.'",
     "build": "tsc",
     "dev": "nodemon src/server.ts",
+    "start:production": "npm run prestart && npm start",
+    "start:skip-lint": "ts-node src/server.ts",
+    "dev:skip-lint": "nodemon src/server.ts",
     "lint": "eslint .",
     "lint-fix": "eslint --fix .",
+    "lint-check": "eslint . --max-warnings 0",
+    "lint-check-errors": "eslint .",
+    "lint:report": "eslint . --format=table",
     "tsc": "tsc --noEmit",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -15,10 +23,13 @@
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
-      "prettier --write"
+      "eslint --fix --max-warnings=0",
+      "prettier --write",
+      "git add"
     ],
     "*.{json,css,md}": [
-      "prettier --write"
+      "prettier --write",
+      "git add"
     ]
   },
   "dependencies": {
@@ -76,7 +87,6 @@
     "@typescript-eslint/parser": "^8.34.0",
     "eslint": "^9.28.0",
     "eslint-config-prettier": "^10.1.5",
-    "eslint-plugin-import": "^2.31.0",
     "eslint-plugin-jsdoc": "^51.0.1",
     "eslint-plugin-n": "^17.20.0",
     "eslint-plugin-prettier": "^5.4.1",
@@ -84,6 +94,7 @@
     "eslint-plugin-security": "^3.0.1",
     "eslint-plugin-sonarjs": "^3.0.2",
     "eslint-plugin-unicorn": "^59.0.1",
+    "eslint-plugin-import": "^2.31.0",
     "globals": "^16.2.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.1.0",

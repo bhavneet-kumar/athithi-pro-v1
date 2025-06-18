@@ -1,6 +1,13 @@
-import { Agency } from '../../shared/models/agency.model';
 import { Permission } from '../../shared/models/permission.model';
 import { Role, RoleType } from '../../shared/models/role.model';
+
+interface AgencyRoleInfo {
+  id: string;
+  name: string;
+  type: RoleType;
+  description: string;
+  permissions: string[];
+}
 
 class AgencyRoleService {
   // Create default roles for a new agency
@@ -83,11 +90,11 @@ class AgencyRoleService {
   }
 
   // Get all roles for an agency
-  async getAgencyRoles(agencyId: string): Promise<any[]> {
+  async getAgencyRoles(agencyId: string): Promise<AgencyRoleInfo[]> {
     const roles = await Role.find({ agency: agencyId }).populate('permissions').lean();
 
     return roles.map((role) => ({
-      id: role._id,
+      id: role._id.toString(),
       name: role.name,
       type: role.type,
       description: role.description,

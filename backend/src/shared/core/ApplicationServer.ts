@@ -1,9 +1,10 @@
-import http from 'http';
+import http from 'node:http';
+import { Socket } from 'node:net';
 
 import { Application } from 'express';
 
 import { connectDB, closeDB } from '../config/db';
-import { InternalServerError } from '../utils/CustomError';
+import { InternalServerError } from '../utils/customError';
 
 // ApplicationServer handles server lifecycle and graceful shutdown
 export class ApplicationServer {
@@ -16,14 +17,15 @@ export class ApplicationServer {
   constructor(app: Application, port?: string) {
     this.app = app;
     this.port = this.parsePort(port || process.env.PORT || '3000');
-    this.timeout = parseInt(process.env.SERVER_TIMEOUT || '60000', 10);
+    this.timeout = Number.parseInt(process.env.SERVER_TIMEOUT || '60000', 10);
     this.setupProcessHandlers();
   }
 
   // Parse and validate port number
   private parsePort(portString: string): number {
-    const port = parseInt(portString, 10);
-    if (isNaN(port) || port <= 0 || port > 65535) {
+    const port = Number.parseInt(portString, 10);
+    // eslint-disable-next-line @typescript-eslint/no-magic-numbers
+    if (Number.isNaN(port) || port <= 0 || port > 65_535) {
       throw new InternalServerError(`Invalid port number: ${portString}`);
     }
     return port;
@@ -80,19 +82,19 @@ export class ApplicationServer {
       this.server.on('error', (error: NodeJS.ErrnoException) => {
         this.handleServerError(error);
       });
-      this.server.on('clientError', (error: Error, socket: any) => {
+      this.server.on('clientError', (error: Error, socket: Socket) => {
         console.error('Client Error:', error.message);
         if (!socket.destroyed) {
           socket.end('HTTP/1.1 400 Bad Request\r\n\r\n');
         }
       });
-      this.server.on('timeout', (socket: any) => {
+      this.server.on('timeout', (socket: Socket) => {
         console.warn('Server timeout on socket');
         if (!socket.destroyed) {
           socket.end('HTTP/1.1 408 Request Timeout\r\n\r\n');
         }
       });
-    } catch (error) {
+    } catch {
       throw new InternalServerError('Failed to create HTTP server');
     }
   }
@@ -117,53 +119,85 @@ export class ApplicationServer {
     if (error.syscall !== 'listen') {
       throw error;
     }
-    const bind = typeof this.port === 'string' ? 'Pipe ' + this.port : 'Port ' + this.port;
+    const bind = typeof this.port === 'string' ? `Pipe ${this.port}` : `Port ${this.port}`;
     switch (error.code) {
-      case 'EACCES':
+      case 'EACCES': {
         console.error(`${bind} requires elevated privileges`);
-        process.exit(1);
-        break;
-      case 'EADDRINUSE':
+        throw new InternalServerError(`${bind} requires elevated privileges`);
+      }
+      case 'EADDRINUSE': {
         console.error(`${bind} is already in use`);
-        process.exit(1);
-        break;
-      default:
+        throw new InternalServerError(`${bind} is already in use`);
+      }
+      default: {
         throw error;
+      }
     }
   }
 
   // Handle graceful shutdown
   private async handleShutdown(reason: string, error: unknown): Promise<void> {
     if (this.isShuttingDown) {
-      console.log('Shutdown already in progress...');
+      this.logShutdownInProgress();
       return;
     }
     this.isShuttingDown = true;
+    this.logInitiateShutdown(reason, error);
+
+    const SHUTDOWN_TIMEOUT_MS = 10_000;
+    const shutdownTimeout = setTimeout(() => {
+      this.logShutdownTimeout();
+      throw new InternalServerError('Graceful shutdown timeout');
+    }, SHUTDOWN_TIMEOUT_MS);
+
+    try {
+      await this.shutdownServer();
+      await this.shutdownDatabase();
+      clearTimeout(shutdownTimeout);
+      this.logShutdownComplete();
+      throw new InternalServerError('Graceful shutdown completed');
+    } catch (shutdownError) {
+      this.logShutdownError(shutdownError);
+      clearTimeout(shutdownTimeout);
+      throw new InternalServerError('Error during shutdown');
+    }
+  }
+
+  private logShutdownInProgress(): void {
+    console.log('Shutdown already in progress...');
+  }
+
+  private logInitiateShutdown(reason: string, error: unknown): void {
     console.log(`Initiating graceful shutdown: ${reason}`);
     if (error) {
       console.error('Error details:', error);
     }
-    const shutdownTimeout = setTimeout(() => {
-      console.error('Graceful shutdown timeout, forcing exit...');
-      process.exit(1);
-    }, 10000);
-    try {
-      if (this.server) {
-        console.log('Closing HTTP server...');
-        await this.closeServer();
-        console.log('HTTP server closed');
-      }
-      console.log('Closing database connection...');
-      await closeDB();
-      console.log('Database connection closed');
-      clearTimeout(shutdownTimeout);
-      console.log('Graceful shutdown completed');
-      process.exit(error ? 1 : 0);
-    } catch (shutdownError) {
-      console.error('Error during shutdown:', shutdownError);
-      clearTimeout(shutdownTimeout);
-      process.exit(1);
+  }
+
+  private logShutdownTimeout(): void {
+    console.error('Graceful shutdown timeout, forcing exit...');
+  }
+
+  private async shutdownServer(): Promise<void> {
+    if (this.server) {
+      console.log('Closing HTTP server...');
+      await this.closeServer();
+      console.log('HTTP server closed');
     }
+  }
+
+  private async shutdownDatabase(): Promise<void> {
+    console.log('Closing database connection...');
+    await closeDB();
+    console.log('Database connection closed');
+  }
+
+  private logShutdownComplete(): void {
+    console.log('Graceful shutdown completed');
+  }
+
+  private logShutdownError(shutdownError: unknown): void {
+    console.error('Error during shutdown:', shutdownError);
   }
 
   // Close HTTP server
@@ -173,6 +207,7 @@ export class ApplicationServer {
         resolve();
         return;
       }
+      // eslint-disable-next-line promise/prefer-await-to-callbacks
       this.server.close((error) => {
         if (error) {
           reject(error);

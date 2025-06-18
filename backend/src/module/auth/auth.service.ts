@@ -1,21 +1,30 @@
 import jwt, { SignOptions, Secret } from 'jsonwebtoken';
-import { User, IUser } from '../../shared/models/user.model';
-import { Role } from '../../shared/models/role.model';
-import { IAgency } from '../../shared/models/agency.model';
-import { LoginMetadata, ILoginMetadata } from '../../shared/models/loginMetadata.model';
 
+import { ILoginMetadata, LoginMetadata } from 'shared/models/loginMetadata.model';
+
+import { config } from '../../shared/config/index';
+import {
+  LOGIN_RATE_LIMITER_TIME,
+  MINUTES_IN_MILLISECONDS,
+  THIRTY_MINUTES_IN_MILLISECONDS,
+  TWENTY_FOUR_HOURS_IN_MILLISECONDS,
+} from '../../shared/constant/timeValues';
+import { MAX_LOGIN_ATTEMPTS } from '../../shared/constant/validation';
+import { Role } from '../../shared/models/role.model';
+import { User, IUser } from '../../shared/models/user.model';
+import { BaseService } from '../../shared/services/baseService';
 import { emailService } from '../../shared/services/email.service';
 import {
   BadRequestError,
   UnauthorizedError,
   ForbiddenError,
-  NotFoundError,
   BusinessError,
   InternalServerError,
   CustomError,
-} from '../../shared/utils/CustomError';
-import { BaseService } from '../../shared/services/BaseService';
-import { config } from '../../shared/config/index';
+  NotFoundError,
+} from '../../shared/utils/customError';
+import { IAgency } from '../agency/agency.interface';
+
 import { ILoginInput, IRegisterInput, IPasswordResetInput, IRefreshTokenInput, ILoginResponse } from './auth.interface';
 
 export class AuthService extends BaseService<IUser> {
@@ -30,8 +39,10 @@ export class AuthService extends BaseService<IUser> {
   };
 
   // Constants for business rules
-  private readonly MAX_LOGIN_ATTEMPTS = 5;
-  private readonly ACCOUNT_LOCK_TIME = 15 * 60 * 1000; // 15 minutes
+  private readonly MAX_LOGIN_ATTEMPTS = MAX_LOGIN_ATTEMPTS;
+  private readonly ACCOUNT_LOCK_TIME = LOGIN_RATE_LIMITER_TIME; // 15 minutes
+  private readonly EMAIL_VERIFICATION_EXPIRY = TWENTY_FOUR_HOURS_IN_MILLISECONDS; // 24 hours
+  private readonly PASSWORD_RESET_EXPIRY = THIRTY_MINUTES_IN_MILLISECONDS; // 30 minutes
 
   constructor() {
     super(User, 'User');
@@ -49,7 +60,7 @@ export class AuthService extends BaseService<IUser> {
 
       if (existingUser) {
         throw new BusinessError(
-          `User with this email already exists for Agency: ${existingUser.agency.name}, Database unique Id: ${existingUser.agency._id}`
+          `User with this email already exists for Agency: ${existingUser.agency.name}, Database unique Id: ${existingUser.agency._id}`,
         );
       }
 
@@ -66,9 +77,12 @@ export class AuthService extends BaseService<IUser> {
       });
       await metadata.save();
 
-      await metadata.generateEmailVerificationToken();
-      await emailService.sendVerificationEmail(user.email, metadata.emailVerificationToken!);
-    } catch (error: any) {
+      // Send verification email
+      if (!user.emailVerificationToken) {
+        throw new InternalServerError('Failed to generate email verification token');
+      }
+      await emailService.sendVerificationEmail(user.email, user.emailVerificationToken);
+    } catch (error) {
       if (error instanceof CustomError) {
         throw error;
       }
@@ -83,14 +97,15 @@ export class AuthService extends BaseService<IUser> {
         emailVerificationExpires: { $gt: Date.now() },
       });
 
-      if (!metadata) throw new BadRequestError('Invalid or expired verification token');
+      if (!metadata) {
+        throw new BadRequestError('Invalid or expired verification token');
+      }
 
       metadata.isEmailVerified = true;
-      metadata.emailVerificationToken = undefined;
-      metadata.emailVerificationExpires = undefined;
+      metadata.emailVerificationToken = null;
+      metadata.emailVerificationExpires = null;
       await metadata.save();
-
-    } catch (error: any) {
+    } catch (error) {
       if (error instanceof CustomError) {
         throw error;
       }
@@ -101,36 +116,25 @@ export class AuthService extends BaseService<IUser> {
   async login(data: ILoginInput): Promise<ILoginResponse> {
     try {
       const user = await this.findOne({ email: data.email });
-      if (!user) throw new UnauthorizedError('Invalid credentials');
-
-      const metadata = await LoginMetadata.findOne({ userId: user._id });
-      if (!metadata) throw new UnauthorizedError('Invalid credentials');
-
-      if (metadata.accountLockedUntil && metadata.accountLockedUntil > new Date()) {
-        const lockMins = Math.ceil((metadata.accountLockedUntil.getTime() - Date.now()) / 60000);
-        throw new ForbiddenError(`Account is locked. Try again in ${lockMins} minutes.`);
-      }
-
-      const isMatch = await metadata.comparePassword(data.password);
-      if (!isMatch) {
-        await this.handleFailedLogin(metadata);
+      if (!user) {
         throw new UnauthorizedError('Invalid credentials');
       }
+
+      const metadata = await LoginMetadata.findOne({ userId: user._id });
+      if (!metadata) {
+        throw new UnauthorizedError('Invalid credentials');
+      }
+
+      this.checkAccountLockStatus(metadata, user);
+
+      await this.verifyUserPassword(user, data.password, metadata);
 
       await this.resetFailedLoginAttempts(metadata);
 
       const tokens = this.generateTokens(user.id.toString());
 
-      return {
-        ...tokens,
-        user: {
-          id: user.id.toString(),
-          email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
-        },
-      };
-    } catch (error: any) {
+      return this.buildLoginResponse(tokens, user);
+    } catch (error) {
       if (error instanceof CustomError) {
         throw error;
       }
@@ -138,19 +142,79 @@ export class AuthService extends BaseService<IUser> {
     }
   }
 
-  async forgotPassword(email: string): Promise<void> {
+  /**
+   * Checks if the account is locked based on metadata or user fields.
+   * Throws ForbiddenError if locked.
+   * @param metadata The login metadata object to check the account lock status for
+   * @param user The user object to check the account lock status for
+   * @throws ForbiddenError if the account is locked
+   */
+  private checkAccountLockStatus(metadata: ILoginMetadata, user: IUser): void {
+    if (metadata.accountLockedUntil && metadata.accountLockedUntil > new Date()) {
+      const lockMins = Math.ceil((metadata.accountLockedUntil.getTime() - Date.now()) / MINUTES_IN_MILLISECONDS);
+      throw new ForbiddenError(`Account is locked. Try again in ${lockMins} minutes.`);
+    }
 
+    if (user.accountLockedUntil && user.accountLockedUntil > new Date()) {
+      const lockTimeRemaining = Math.ceil((user.accountLockedUntil.getTime() - Date.now()) / MINUTES_IN_MILLISECONDS);
+      throw new ForbiddenError(`Account is locked. Please try again in ${lockTimeRemaining} minutes.`);
+    }
+  }
+
+  /**
+   * Verifies the user's password. Handles failed login attempts.
+   * Throws UnauthorizedError if password is invalid.
+   * @param user The user object to verify the password for
+   * @param password The password to verify
+   * @param metadata The login metadata object to handle the failed login attempts for
+   * @throws UnauthorizedError if the password is invalid
+   */
+  private async verifyUserPassword(user: IUser, password: string, metadata: ILoginMetadata): Promise<void> {
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      await this.handleFailedLogin(metadata);
+      throw new UnauthorizedError('Invalid credentials');
+    }
+  }
+
+  /**
+   * Builds the login response object.
+   * @param tokens The tokens to build the login response object for
+   * @param tokens.token The token to build the login response object for
+   * @param tokens.refreshToken The refresh token to build the login response object for
+   * @param user The user object to build the login response object for
+   * @returns The login response object
+   */
+  private buildLoginResponse(tokens: { token: string; refreshToken: string }, user: IUser): ILoginResponse {
+    return {
+      ...tokens,
+      user: {
+        id: user.id.toString(),
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+      },
+    };
+  }
+
+  async forgotPassword(email: string): Promise<void> {
     try {
       const user = await User.findOne({ email });
-      if (!user) throw new NotFoundError('User not found');
+      if (!user) {
+        throw new NotFoundError('User not found');
+      }
 
       const metadata = await LoginMetadata.findOne({ userId: user._id });
-      if (!metadata) throw new NotFoundError('Login metadata not found');
+      if (!metadata) {
+        throw new NotFoundError('Login metadata not found');
+      }
 
       await metadata.generatePasswordResetToken();
-      await emailService.sendPasswordResetEmail(user.email, metadata.passwordResetToken!);
-
-    } catch (error: any) {
+      if (!metadata.passwordResetToken) {
+        throw new InternalServerError('Failed to generate password reset token');
+      }
+      await emailService.sendPasswordResetEmail(user.email, metadata.passwordResetToken);
+    } catch (error) {
       if (error instanceof CustomError) {
         throw error;
       }
@@ -165,13 +229,15 @@ export class AuthService extends BaseService<IUser> {
         passwordResetExpires: { $gt: Date.now() },
       });
 
-      if (!metadata) throw new BadRequestError('Invalid or expired reset token');
+      if (!metadata) {
+        throw new BadRequestError('Invalid or expired reset token');
+      }
 
       metadata.password = data.password;
-      metadata.passwordResetToken = undefined;
-      metadata.passwordResetExpires = undefined;
+      metadata.passwordResetToken = null;
+      metadata.passwordResetExpires = null;
       await metadata.save();
-    } catch (error: any) {
+    } catch (error) {
       if (error instanceof CustomError) {
         throw error;
       }
@@ -183,12 +249,13 @@ export class AuthService extends BaseService<IUser> {
     try {
       const decoded = jwt.verify(data.refreshToken, config.jwt.refreshSecret) as { id: string };
       const user = await this.findById(decoded.id);
-      if (!user) throw new ForbiddenError('Invalid refresh token');
+      if (!user) {
+        throw new ForbiddenError('Invalid refresh token');
+      }
 
       const token = jwt.sign({ id: user._id }, config.jwt.secret as Secret, this.tokenOptions);
       return { token };
-
-    } catch (error: any) {
+    } catch (error) {
       if (error instanceof CustomError) {
         throw error;
       }
@@ -198,6 +265,7 @@ export class AuthService extends BaseService<IUser> {
 
   /**
    * Handle failed login attempts with account locking logic
+   * @param metadata The login metadata object to handle the failed login attempts for
    */
   private async handleFailedLogin(metadata: ILoginMetadata): Promise<void> {
     try {
@@ -209,7 +277,7 @@ export class AuthService extends BaseService<IUser> {
       }
 
       await metadata.save();
-    } catch (error: any) {
+    } catch (error) {
       if (error instanceof CustomError) {
         throw error;
       }
@@ -219,13 +287,14 @@ export class AuthService extends BaseService<IUser> {
 
   /**
    * Reset failed login attempts after successful login
+   * @param metadata The login metadata object to reset the failed login attempts for
    */
   private async resetFailedLoginAttempts(metadata: ILoginMetadata): Promise<void> {
     try {
       metadata.failedLoginAttempts = 0;
-      metadata.accountLockedUntil = undefined;
+      metadata.accountLockedUntil = null;
       await metadata.save();
-    } catch (error: any) {
+    } catch (error) {
       if (error instanceof CustomError) {
         throw error;
       }
@@ -235,6 +304,9 @@ export class AuthService extends BaseService<IUser> {
 
   /**
    * Generate JWT tokens
+   * @param userId The user ID for which to generate tokens
+   * @throws {InternalServerError} If token generation fails
+   * @returns The generated tokens
    */
   private generateTokens(userId: string): { token: string; refreshToken: string } {
     try {
@@ -243,7 +315,7 @@ export class AuthService extends BaseService<IUser> {
       const refreshToken = jwt.sign({ id: userId }, config.jwt.refreshPrivateKey as Secret, this.refreshTokenOptions);
 
       return { token, refreshToken };
-    } catch (error: any) {
+    } catch (error) {
       if (error instanceof CustomError) {
         throw error;
       }

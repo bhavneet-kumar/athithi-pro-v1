@@ -1,3 +1,6 @@
+import { dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 import { fixupPluginRules } from '@eslint/compat';
 import { FlatCompat } from '@eslint/eslintrc';
 import js from '@eslint/js';
@@ -5,8 +8,11 @@ import typescriptEslint from '@typescript-eslint/eslint-plugin';
 import tsParser from '@typescript-eslint/parser';
 import _import from 'eslint-plugin-import';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
 const compat = new FlatCompat({
-  baseDirectory: import.meta.dirname,
+  baseDirectory: __dirname,
   recommendedConfig: js.configs.recommended,
   allConfig: js.configs.all,
 });
@@ -58,6 +64,9 @@ export default [
         },
       ],
       'import/no-duplicates': 'error',
+
+      // Disable dependency validation for config files
+      'import/no-extraneous-dependencies': 'off',
 
       // TypeScript auto-fixable rules
       '@typescript-eslint/no-array-constructor': 'error',

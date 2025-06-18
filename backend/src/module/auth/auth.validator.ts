@@ -1,30 +1,39 @@
 import { z } from 'zod';
 
-// Common validation schemas
+import { PASSWORD_MIN_LENGTH, PASSWORD_MAX_LENGTH } from '../../shared/constant/validation';
+
+// Magic numbers for validation
+const EMAIL_MAX_LENGTH = 255;
+const NAME_MIN_LENGTH = 2;
+const NAME_MAX_LENGTH = 50;
+const LOGIN_PASSWORD_MAX_LENGTH = PASSWORD_MAX_LENGTH;
+const REFRESH_TOKEN_MAX_LENGTH = 500;
+const TOKEN_MAX_LENGTH = 64;
+
 const emailSchema = z
   .string()
   .email('Invalid email format')
   .toLowerCase()
   .trim()
-  .max(255, 'Email must not exceed 255 characters');
+  .max(EMAIL_MAX_LENGTH, `Email must not exceed ${EMAIL_MAX_LENGTH} characters`);
 
 const passwordSchema = z
   .string()
-  .min(8, 'Password must be at least 8 characters')
-  .max(128, 'Password must not exceed 128 characters')
+  .min(PASSWORD_MIN_LENGTH, `Password must be at least ${PASSWORD_MIN_LENGTH} characters`)
+  .max(PASSWORD_MAX_LENGTH, `Password must not exceed ${PASSWORD_MAX_LENGTH} characters`)
   .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
   .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
-  .regex(/[0-9]/, 'Password must contain at least one number')
-  .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character');
+  .regex(/\d/, 'Password must contain at least one number')
+  .regex(/[^\dA-Za-z]/, 'Password must contain at least one special character');
 
 const nameSchema = z
   .string()
-  .min(2, 'Name must be at least 2 characters')
-  .max(50, 'Name must not exceed 50 characters')
+  .min(NAME_MIN_LENGTH, `Name must be at least ${NAME_MIN_LENGTH} characters`)
+  .max(NAME_MAX_LENGTH, `Name must not exceed ${NAME_MAX_LENGTH} characters`)
   .trim()
-  .regex(/^[a-zA-Z\s]+$/, 'Name can only contain letters and spaces');
+  .regex(/^[\sA-Za-z]+$/, 'Name can only contain letters and spaces');
 
-const objectIdSchema = z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid ObjectId format');
+const objectIdSchema = z.string().regex(/^[\dA-Fa-f]{24}$/, 'Invalid ObjectId format');
 
 // Registration schema with comprehensive validation
 export const registerSchema = z.object({
@@ -39,7 +48,7 @@ export const registerSchema = z.object({
 // Login schema
 export const loginSchema = z.object({
   email: emailSchema,
-  password: z.string().min(1, 'Password is required').max(128, 'Password too long'),
+  password: z.string().min(1, 'Password is required').max(LOGIN_PASSWORD_MAX_LENGTH, `Password too long`),
 });
 
 // Password reset schema
@@ -55,7 +64,10 @@ export const passwordResetSchema = z
 
 // Refresh token schema
 export const refreshTokenSchema = z.object({
-  refreshToken: z.string().min(1, 'Refresh token is required').max(500, 'Invalid refresh token format'),
+  refreshToken: z
+    .string()
+    .min(1, 'Refresh token is required')
+    .max(REFRESH_TOKEN_MAX_LENGTH, 'Invalid refresh token format'),
 });
 
 // Forgot password schema
@@ -65,12 +77,12 @@ export const forgotPasswordSchema = z.object({
 
 // Email verification schema
 export const emailVerificationSchema = z.object({
-  token: z.string().min(1, 'Verification token is required').max(64, 'Invalid token format'),
+  token: z.string().min(1, 'Verification token is required').max(TOKEN_MAX_LENGTH, 'Invalid token format'),
 });
 
 // Parameters validation schemas
 export const tokenParamSchema = z.object({
-  token: z.string().min(1, 'Token is required').max(64, 'Invalid token format'),
+  token: z.string().min(1, 'Token is required').max(TOKEN_MAX_LENGTH, 'Invalid token format'),
 });
 
 // Export types

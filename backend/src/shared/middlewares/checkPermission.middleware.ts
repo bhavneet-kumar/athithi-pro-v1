@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 
 import { agencyRoleService } from '../../module/agency/agencyRole.service';
 import { UserRole } from '../../types/enum/user';
-import { ForbiddenError } from '../utils/CustomError';
+import { ForbiddenError } from '../utils/customError';
 
 import { auditMiddleware } from './audit.middleware';
 

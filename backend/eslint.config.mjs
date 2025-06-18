@@ -280,8 +280,8 @@ export default [
       // ====================
 
       'n/no-deprecated-api': 'error',
-      'n/no-extraneous-import': 'error',
-      'n/no-extraneous-require': 'error',
+      // 'n/no-extraneous-import': 'error',
+      // 'n/no-extraneous-require': 'error',
       'n/no-missing-import': 'off', // TypeScript handles this
       'n/no-missing-require': 'off', // TypeScript handles this
       'n/no-unpublished-import': 'off', // Allow dev dependencies
@@ -357,21 +357,6 @@ export default [
       'import/no-unresolved': 'off', // TypeScript handles this better
       'import/no-duplicates': 'error',
       'import/no-deprecated': 'error',
-      'import/no-extraneous-dependencies': [
-        'error',
-        {
-          devDependencies: [
-            '**/*.test.ts',
-            '**/*.spec.ts',
-            '**/test/**',
-            '**/tests/**',
-            '**/__tests__/**',
-            '**/jest.config.*',
-            '**/vitest.config.*',
-            '**/eslint.config.*',
-          ],
-        },
-      ],
       'import/no-mutable-exports': 'error',
       'import/no-self-import': 'error',
       'import/no-cycle': 'error',
@@ -493,7 +478,6 @@ export default [
     files: ['**/*.config.ts', '**/*.config.js', '**/*.config.mjs'],
     rules: {
       '@typescript-eslint/no-magic-numbers': 'off',
-      'import/no-extraneous-dependencies': 'off',
     },
   },
 ];

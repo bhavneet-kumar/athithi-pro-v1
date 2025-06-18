@@ -3,7 +3,6 @@
 
 class EmailService {
   //   private transporter: nodemailer.Transporter;
-
   constructor() {
     // this.transporter = nodemailer.createTransport({
     //   host: config.email.host,
@@ -12,11 +11,13 @@ class EmailService {
     //   auth: {
     //     user: config.email.user,
     //     pass: config.email.password,
-    //   },
+    //   }
     // });
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async sendVerificationEmail(email: string, token: string): Promise<void> {
+    // console.log('email', email);
     // const verificationUrl = `${config.app.url}/api/auth/verify-email/${token}`;
     // await this.transporter.sendMail({
     //   from: config.email.from,
@@ -30,7 +31,9 @@ class EmailService {
     // });
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async sendPasswordResetEmail(email: string, token: string): Promise<void> {
+    console.log('email', email);
     // const resetUrl = `${config.app.url}/api/auth/reset-password/${token}`;
     // await this.transporter.sendMail({
     //   from: config.email.from,

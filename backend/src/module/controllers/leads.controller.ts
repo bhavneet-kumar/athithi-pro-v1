@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import { leadsService } from './leads.service';
-import { BaseController } from '../../controllers/base.controller';
+import { BaseController } from './base.controller';
+import { leadsService } from '../services/leads.service';
 
 /**
  * Leads Controller Class Following Abstract Factory Pattern

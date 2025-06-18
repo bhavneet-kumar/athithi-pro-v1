@@ -1,9 +1,5 @@
 import { Router } from 'express';
 
-import { signupLimiter, loginLimiter, passwordResetLimiter } from '../../shared/middlewares/rateLimiter.middleware';
-import { validateBody, validateParams } from '../../shared/middlewares/validation.middleware';
-
-import { authController } from './auth.controller';
 import {
   registerSchema,
   loginSchema,
@@ -11,7 +7,10 @@ import {
   refreshTokenSchema,
   forgotPasswordSchema,
   tokenParamSchema,
-} from './auth.validator';
+} from '../validators/auth.validator';
+import { authController } from '../controllers/auth.controller';
+import { validateBody, validateParams } from '../../shared/middlewares/validation.middleware';
+import { signupLimiter, loginLimiter, passwordResetLimiter } from '../../shared/middlewares/rateLimiter.middleware';
 
 const router = Router();
 

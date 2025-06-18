@@ -1,6 +1,6 @@
-import { ILeadCreate, ILeadFilter } from './leads.interface';
-import { ILead, Lead } from '../../shared/models/leads.model';
+import { ILead, Lead } from '../models/leads.model';
 import { BaseService } from '../../shared/services/BaseService';
+import { ILeadCreate, ILeadFilter } from '../models/interfaces/leads.interface';
 import { BadRequestError, CustomError, InternalServerError, NotFoundError } from '../../shared/utils/CustomError';
 
 /**

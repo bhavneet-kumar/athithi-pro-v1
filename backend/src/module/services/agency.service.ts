@@ -6,11 +6,11 @@ import {
   InternalServerError,
 } from '../../shared/utils/CustomError';
 
-import { IAgency } from './agency.interface';
-import { agencyRoleService } from './agencyRole.service';
-import { Agency } from '../../shared/models/agency.model';
+import { Agency } from '../models/agency.model';
+import { agencyRoleService } from './roles.service';
+import { IAgency } from '../models/interfaces/agency.interface';
 import { BaseService } from '../../shared/services/BaseService';
-import { CreateAgencyInput, UpdateAgencyInput } from './agency.validator';
+import { CreateAgencyInput, UpdateAgencyInput } from '../validators/agency.validator';
 
 /**
  * Agency Service Class

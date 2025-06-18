@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import '../types/express/index';
-import authRoutes from './auth/auth.routes';
-import leadRoutes from './leads/leads.routes';
-import agencyRoutes from './agency/agency.routes';
+import authRoutes from './routes/auth.routes';
+import leadRoutes from './routes/leads.routes';
+import agencyRoutes from './routes/agency.routes';
 import { OkSuccess } from '../shared/utils/CustomSuccess';
 
 const router = Router();

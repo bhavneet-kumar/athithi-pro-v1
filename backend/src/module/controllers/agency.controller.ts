@@ -1,7 +1,8 @@
-import { agencyService } from './agency.service';
 import { Request, Response, NextFunction } from 'express';
+
+import { BaseController } from './base.controller';
+import { agencyService } from '../services/agency.service';
 import { BadRequestError } from '../../shared/utils/CustomError';
-import { BaseController } from '../../controllers/base.controller';
 
 /**
  * Agency Controller Class

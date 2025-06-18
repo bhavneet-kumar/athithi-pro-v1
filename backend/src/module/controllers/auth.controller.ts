@@ -1,8 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 
+import { authService } from '../services/auth.service';
 import { BadRequestError, InternalServerError } from '../../shared/utils/CustomError';
-
-import { authService } from './auth.service';
 
 /**
  * Authentication Controller Class

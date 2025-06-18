@@ -1,8 +1,6 @@
 import jwt, { SignOptions, Secret } from 'jsonwebtoken';
 import { Types } from 'mongoose';
-import { User, IUser } from '../../shared/models/user.model';
-import { Role } from '../../shared/models/role.model';
-import { emailService } from '../../shared/services/email.service';
+
 import {
   BadRequestError,
   UnauthorizedError,
@@ -12,9 +10,12 @@ import {
   InternalServerError,
   CustomError,
 } from '../../shared/utils/CustomError';
-import { BaseService } from '../../shared/services/BaseService';
 import { config } from '../../shared/config/index';
-import { ILoginInput, IRegisterInput, IPasswordResetInput, IRefreshTokenInput, ILoginResponse } from './auth.interface';
+import { Role } from '../../shared/models/role.model';
+import { User, IUser } from '../../shared/models/user.model';
+import { BaseService } from '../../shared/services/BaseService';
+import { emailService } from '../../shared/services/email.service';
+import { ILoginInput, IRegisterInput, IPasswordResetInput, IRefreshTokenInput, ILoginResponse } from '../models/interfaces/auth.interface';
 
 export class AuthService extends BaseService<IUser> {
   private readonly tokenOptions: SignOptions = {

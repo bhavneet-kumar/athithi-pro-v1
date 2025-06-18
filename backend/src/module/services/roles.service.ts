@@ -1,6 +1,6 @@
-import { Agency } from '../../shared/models/agency.model';
-import { Permission } from '../../shared/models/permission.model';
+import { Agency } from '../models/agency.model';
 import { Role, RoleType } from '../../shared/models/role.model';
+import { Permission } from '../../shared/models/permission.model';
 
 class AgencyRoleService {
   // Create default roles for a new agency

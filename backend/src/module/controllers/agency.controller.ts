@@ -1,8 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 
-import { BaseController } from './base.controller';
-import { agencyService } from '../services/agency.service';
 import { BadRequestError } from '../../shared/utils/CustomError';
+import { agencyService } from '../services/agency.service';
+
+import { BaseController } from './base.controller';
 
 /**
  * Agency Controller Class
@@ -16,6 +17,9 @@ export class AgencyController extends BaseController<any> {
 
   /**
    * List agencies with pagination and filtering
+   * @param req
+   * @param res
+   * @param next
    */
   async listAgencies(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
@@ -40,8 +44,8 @@ export class AgencyController extends BaseController<any> {
 
       const result = await agencyService.listAgencies(
         filters,
-        parseInt(page || '1', 10),
-        parseInt(limit || '10', 10),
+        Number.parseInt(page || '1', 10),
+        Number.parseInt(limit || '10', 10),
         sortObj,
       );
 
@@ -69,6 +73,9 @@ export class AgencyController extends BaseController<any> {
 
   /**
    * Get agency by code
+   * @param req
+   * @param res
+   * @param next
    */
   async getAgencyByCode(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
@@ -106,6 +113,9 @@ export class AgencyController extends BaseController<any> {
 
   /**
    * Update agency settings
+   * @param req
+   * @param res
+   * @param next
    */
   async updateAgencySettings(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {

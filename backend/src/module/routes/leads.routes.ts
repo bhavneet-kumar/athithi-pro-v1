@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import passport from 'passport';
 
-import { leadsController, LeadsController } from '../controllers/leads.controller';
 import { checkPermission } from '../../shared/middlewares/permissions.middleware';
+import { leadsController, LeadsController } from '../controllers/leads.controller';
 
 const router = Router();
 

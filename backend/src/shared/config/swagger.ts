@@ -1,5 +1,4 @@
 import swaggerJsdoc from 'swagger-jsdoc';
-import swaggerUi from 'swagger-ui-express';
 
 const options = {
   definition: {
@@ -15,4 +14,5 @@ const options = {
 };
 
 export const swaggerDocument = swaggerJsdoc(options);
-export { swaggerUi };
+
+export { default as swaggerUi } from 'swagger-ui-express';

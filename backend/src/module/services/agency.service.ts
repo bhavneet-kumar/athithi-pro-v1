@@ -1,3 +1,4 @@
+import { BaseService } from '../../shared/services/BaseService';
 import {
   CustomError,
   NotFoundError,
@@ -5,12 +6,11 @@ import {
   BadRequestError,
   InternalServerError,
 } from '../../shared/utils/CustomError';
-
 import { Agency } from '../models/agency.model';
-import { agencyRoleService } from './roles.service';
 import { IAgency } from '../models/interfaces/agency.interface';
-import { BaseService } from '../../shared/services/BaseService';
 import { CreateAgencyInput, UpdateAgencyInput } from '../validators/agency.validator';
+
+import { agencyRoleService } from './roles.service';
 
 /**
  * Agency Service Class

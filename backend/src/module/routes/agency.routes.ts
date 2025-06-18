@@ -1,6 +1,9 @@
 import { Router } from 'express';
 import passport from 'passport';
 
+import { checkPermission } from '../../shared/middlewares/permissions.middleware';
+import { validateBody, validateParams, validateQuery } from '../../shared/middlewares/validation.middleware';
+import { agencyController } from '../controllers/agency.controller';
 import {
   createAgencySchema,
   updateAgencySchema,
@@ -9,9 +12,6 @@ import {
   listAgenciesQuerySchema,
   updateAgencySettingsSchema,
 } from '../validators/agency.validator';
-import { agencyController } from '../controllers/agency.controller';
-import { checkPermission } from '../../shared/middlewares/permissions.middleware';
-import { validateBody, validateParams, validateQuery } from '../../shared/middlewares/validation.middleware';
 
 const router = Router();
 

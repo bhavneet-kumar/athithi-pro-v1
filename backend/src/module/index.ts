@@ -1,9 +1,11 @@
 import { Router } from 'express';
+
 import '../types/express/index';
+import { OkSuccess } from '../shared/utils/CustomSuccess';
+
+import agencyRoutes from './routes/agency.routes';
 import authRoutes from './routes/auth.routes';
 import leadRoutes from './routes/leads.routes';
-import agencyRoutes from './routes/agency.routes';
-import { OkSuccess } from '../shared/utils/CustomSuccess';
 
 const router = Router();
 

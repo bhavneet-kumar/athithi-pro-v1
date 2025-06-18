@@ -164,7 +164,7 @@ const leadSchema = new Schema<ILead>(
     nextFollowUp: { type: Date, index: true },
     followUpReason: String,
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 // Compound index to ensure unique lead number per agency
@@ -182,7 +182,7 @@ leadSchema.index({
   'address.state': 'text',
   'address.country': 'text',
   tags: 'text',
-  notes: 'text'
+  notes: 'text',
 });
 
 export const Lead = mongoose.model<ILead>('Lead', leadSchema);

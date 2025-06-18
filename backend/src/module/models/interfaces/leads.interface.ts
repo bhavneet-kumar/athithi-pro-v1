@@ -1,4 +1,5 @@
 import { Types } from 'mongoose';
+
 import { ILead } from '../../shared/models/leads.model';
 
 export interface ILeadCreate extends ILead {

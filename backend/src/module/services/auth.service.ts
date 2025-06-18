@@ -1,6 +1,11 @@
 import jwt, { SignOptions, Secret } from 'jsonwebtoken';
 import { Types } from 'mongoose';
 
+import { config } from '../../shared/config/index';
+import { Role } from '../../shared/models/role.model';
+import { User, IUser } from '../../shared/models/user.model';
+import { BaseService } from '../../shared/services/BaseService';
+import { emailService } from '../../shared/services/email.service';
 import {
   BadRequestError,
   UnauthorizedError,
@@ -10,12 +15,13 @@ import {
   InternalServerError,
   CustomError,
 } from '../../shared/utils/CustomError';
-import { config } from '../../shared/config/index';
-import { Role } from '../../shared/models/role.model';
-import { User, IUser } from '../../shared/models/user.model';
-import { BaseService } from '../../shared/services/BaseService';
-import { emailService } from '../../shared/services/email.service';
-import { ILoginInput, IRegisterInput, IPasswordResetInput, IRefreshTokenInput, ILoginResponse } from '../models/interfaces/auth.interface';
+import {
+  ILoginInput,
+  IRegisterInput,
+  IPasswordResetInput,
+  IRefreshTokenInput,
+  ILoginResponse,
+} from '../models/interfaces/auth.interface';
 
 export class AuthService extends BaseService<IUser> {
   private readonly tokenOptions: SignOptions = {
@@ -109,7 +115,7 @@ export class AuthService extends BaseService<IUser> {
 
       // Check if account is locked
       if (user.accountLockedUntil && user.accountLockedUntil > new Date()) {
-        const lockTimeRemaining = Math.ceil((user.accountLockedUntil.getTime() - Date.now()) / 60000);
+        const lockTimeRemaining = Math.ceil((user.accountLockedUntil.getTime() - Date.now()) / 60_000);
         throw new ForbiddenError(`Account is locked. Please try again in ${lockTimeRemaining} minutes.`);
       }
 
@@ -198,6 +204,7 @@ export class AuthService extends BaseService<IUser> {
 
   /**
    * Handle failed login attempts with account locking logic
+   * @param user
    */
   private async handleFailedLogin(user: IUser): Promise<void> {
     try {
@@ -219,6 +226,7 @@ export class AuthService extends BaseService<IUser> {
 
   /**
    * Reset failed login attempts after successful login
+   * @param user
    */
   private async resetFailedLoginAttempts(user: IUser): Promise<void> {
     try {
@@ -235,6 +243,7 @@ export class AuthService extends BaseService<IUser> {
 
   /**
    * Generate JWT tokens
+   * @param userId
    */
   private generateTokens(userId: string): { token: string; refreshToken: string } {
     try {

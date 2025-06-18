@@ -1,6 +1,7 @@
-import { Request, Response } from 'express';
-import { CustomError } from '../shared/utils/CustomError';
 import { AxiosError } from 'axios';
+import { Request, Response } from 'express';
+
+import { CustomError } from '../shared/utils/CustomError';
 
 export const errorHandler = (err: unknown, req: Request, res: Response) => {
   let statusCode = 500;
@@ -19,7 +20,7 @@ export const errorHandler = (err: unknown, req: Request, res: Response) => {
   } else if (isObject(err) && err.name === 'CastError') {
     statusCode = 400;
     message = `Invalid value for '${err.path}': ${err.value}`;
-  } else if (isObject(err) && err.code === 11000 && err.keyValue) {
+  } else if (isObject(err) && err.code === 11_000 && err.keyValue) {
     statusCode = 409;
     const field = Object.keys(err.keyValue).join(', ');
     message = `Duplicate field value entered: ${field}`;

@@ -1,8 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 
+import { agencyRoleService } from '../../module/services/roles.service';
 import { UserRole } from '../../types/enum/user';
 import { ForbiddenError } from '../utils/CustomError';
-import { agencyRoleService } from '../../module/services/roles.service';
 
 interface AuthenticatedUser {
   agency: string;

@@ -44,9 +44,9 @@ export abstract class BaseService<T extends Document> {
       let query = this.model.findById(id);
 
       if (populateFields && populateFields.length > 0) {
-        populateFields.forEach((field) => {
+        for (const field of populateFields) {
           query = query.populate(field);
-        });
+        }
       }
 
       const document = await query.exec();
@@ -89,9 +89,9 @@ export abstract class BaseService<T extends Document> {
       let query = this.model.findOne(filter);
 
       if (populateFields && populateFields.length > 0) {
-        populateFields.forEach((field) => {
+        for (const field of populateFields) {
           query = query.populate(field);
-        });
+        }
       }
 
       return await query.exec();
@@ -189,9 +189,15 @@ export abstract class BaseService<T extends Document> {
     hasPrevPage: boolean;
   }> {
     try {
-      if (page < 1) page = 1;
-      if (limit < 1) limit = 10;
-      if (limit > 100) limit = 100; // Prevent too large requests
+      if (page < 1) {
+        page = 1;
+      }
+      if (limit < 1) {
+        limit = 10;
+      }
+      if (limit > 100) {
+        limit = 100;
+      } // Prevent too large requests
 
       const skip = (page - 1) * limit;
 
@@ -235,7 +241,7 @@ export abstract class BaseService<T extends Document> {
     }
 
     // Duplicate key error
-    if (error.code === 11000) {
+    if (error.code === 11_000) {
       const field = Object.keys(error.keyValue || {}).join(', ');
       throw new BusinessError(`Duplicate value for field: ${field}`);
     }

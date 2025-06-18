@@ -1,7 +1,7 @@
-import { ILead, Lead } from '../models/leads.model';
 import { BaseService } from '../../shared/services/BaseService';
-import { ILeadCreate, ILeadFilter } from '../models/interfaces/leads.interface';
 import { BadRequestError, CustomError, InternalServerError, NotFoundError } from '../../shared/utils/CustomError';
+import { ILeadCreate, ILeadFilter } from '../models/interfaces/leads.interface';
+import { ILead, Lead } from '../models/leads.model';
 
 /**
  * Leads Service Class
@@ -14,111 +14,110 @@ export class LeadsService extends BaseService<ILead> {
   }
 
   /**
-     * Create a new agency with default roles
-     * @param data - Agency creation data
-     * @returns Created agency
-     */
-    async create(data: ILeadCreate): Promise<ILead> {
-      try {  
-        // Create the lead - use model directly to avoid interface conflicts
-        const lead = new Lead(data);
-        return await lead.save();
-
-      } catch (error: any) {
-        if (error instanceof CustomError) {
-          throw error;
-        }
-        throw new InternalServerError(`Agency creation failed: ${error.message}`);
+   * Create a new agency with default roles
+   * @param data - Agency creation data
+   * @returns Created agency
+   */
+  async create(data: ILeadCreate): Promise<ILead> {
+    try {
+      // Create the lead - use model directly to avoid interface conflicts
+      const lead = new Lead(data);
+      return await lead.save();
+    } catch (error: any) {
+      if (error instanceof CustomError) {
+        throw error;
       }
+      throw new InternalServerError(`Agency creation failed: ${error.message}`);
     }
-
-  /**
-     * Get all leads
-     * @returns Leads document
-     */
-    async getAll(): Promise<ILead[]> {
-      try {
-        return await this.find();
-      } catch (error: any) {
-        if (error instanceof CustomError) {
-          throw error;
-        }
-        throw new InternalServerError(`Failed to retrieve leads: ${error.message}`);
-      }
-    }
+  }
 
   /**
-     * Get lead by ID with error handling
-     * @param id - Lead ID
-     * @returns Leads document
-     */
-    async getEntityById(id: string): Promise<ILead> {
-      try {
-        if (!id) {
-          throw new BadRequestError('Lead ID is required');
-        }
-  
-        const lead = await this.findById(id);
-        if (!lead) {
-          throw new NotFoundError(`Agency not found with ID: ${id}`);
-        }
-        return lead;
-      } catch (error: any) {
-        if (error instanceof CustomError) {
-          throw error;
-        }
-        throw new InternalServerError(`Failed to retrieve lead: ${error.message}`);
+   * Get all leads
+   * @returns Leads document
+   */
+  async getAll(): Promise<ILead[]> {
+    try {
+      return await this.find();
+    } catch (error: any) {
+      if (error instanceof CustomError) {
+        throw error;
       }
+      throw new InternalServerError(`Failed to retrieve leads: ${error.message}`);
     }
+  }
 
-    /**
-     * Get lead by ID with error handling
-     * @param id - Lead ID
-     * @param updatedData - Partial Lead Data Object
-     */
-    async updateEntity(id: string, updatedData: Partial<ILead>): Promise<ILead> {
-      try {
-        if (!id) {
-          throw new BadRequestError('Lead ID is required');
-        }
-  
-        // Check if lead exists
-        const existingLead = await this.findById(id);
-        if (!existingLead) {
-            throw new NotFoundError(`Lead not found with ID: ${id}`);
-        }
-        const updatedLead = await this.updateById(id, updatedData);
-        if (!updatedLead) {
-            throw new NotFoundError(`Lead not found with ID: ${id}`);
-        }
-        return updatedLead;
-      } catch (error: any) {
-        if (error instanceof CustomError) {
-          throw error;
-        }
-        throw new InternalServerError(`Failed to retrieve lead: ${error.message}`);
+  /**
+   * Get lead by ID with error handling
+   * @param id - Lead ID
+   * @returns Leads document
+   */
+  async getEntityById(id: string): Promise<ILead> {
+    try {
+      if (!id) {
+        throw new BadRequestError('Lead ID is required');
       }
-    }
 
-    /**
-     * Get lead by ID with error handling
-     * @param id - Lead ID
-     * @returns Leads document
-     */
-    async deleteEntityById(id: string): Promise<ILead> {
-      try {
-        if (!id) {
-          throw new BadRequestError('Lead ID is required');
-        }
-  
-        return await this.deleteById(id);
-      } catch (error: any) {
-        if (error instanceof CustomError) {
-          throw error;
-        }
-        throw new InternalServerError(`Failed to retrieve lead: ${error.message}`);
+      const lead = await this.findById(id);
+      if (!lead) {
+        throw new NotFoundError(`Agency not found with ID: ${id}`);
       }
+      return lead;
+    } catch (error: any) {
+      if (error instanceof CustomError) {
+        throw error;
+      }
+      throw new InternalServerError(`Failed to retrieve lead: ${error.message}`);
     }
+  }
+
+  /**
+   * Get lead by ID with error handling
+   * @param id - Lead ID
+   * @param updatedData - Partial Lead Data Object
+   */
+  async updateEntity(id: string, updatedData: Partial<ILead>): Promise<ILead> {
+    try {
+      if (!id) {
+        throw new BadRequestError('Lead ID is required');
+      }
+
+      // Check if lead exists
+      const existingLead = await this.findById(id);
+      if (!existingLead) {
+        throw new NotFoundError(`Lead not found with ID: ${id}`);
+      }
+      const updatedLead = await this.updateById(id, updatedData);
+      if (!updatedLead) {
+        throw new NotFoundError(`Lead not found with ID: ${id}`);
+      }
+      return updatedLead;
+    } catch (error: any) {
+      if (error instanceof CustomError) {
+        throw error;
+      }
+      throw new InternalServerError(`Failed to retrieve lead: ${error.message}`);
+    }
+  }
+
+  /**
+   * Get lead by ID with error handling
+   * @param id - Lead ID
+   * @returns Leads document
+   */
+  async deleteEntityById(id: string): Promise<ILead> {
+    try {
+      if (!id) {
+        throw new BadRequestError('Lead ID is required');
+      }
+
+      return await this.deleteById(id);
+    } catch (error: any) {
+      if (error instanceof CustomError) {
+        throw error;
+      }
+      throw new InternalServerError(`Failed to retrieve lead: ${error.message}`);
+    }
+  }
 }
 
 export const leadsService = new LeadsService();

@@ -1,4 +1,4 @@
-import http from 'http';
+import http from 'node:http';
 
 import { Application } from 'express';
 
@@ -16,14 +16,14 @@ export class ApplicationServer {
   constructor(app: Application, port?: string) {
     this.app = app;
     this.port = this.parsePort(port || process.env.PORT || '3000');
-    this.timeout = parseInt(process.env.SERVER_TIMEOUT || '60000', 10);
+    this.timeout = Number.parseInt(process.env.SERVER_TIMEOUT || '60000', 10);
     this.setupProcessHandlers();
   }
 
   // Parse and validate port number
   private parsePort(portString: string): number {
-    const port = parseInt(portString, 10);
-    if (isNaN(port) || port <= 0 || port > 65535) {
+    const port = Number.parseInt(portString, 10);
+    if (isNaN(port) || port <= 0 || port > 65_535) {
       throw new InternalServerError(`Invalid port number: ${portString}`);
     }
     return port;
@@ -92,7 +92,7 @@ export class ApplicationServer {
           socket.end('HTTP/1.1 408 Request Timeout\r\n\r\n');
         }
       });
-    } catch (error) {
+    } catch {
       throw new InternalServerError('Failed to create HTTP server');
     }
   }
@@ -117,18 +117,21 @@ export class ApplicationServer {
     if (error.syscall !== 'listen') {
       throw error;
     }
-    const bind = typeof this.port === 'string' ? 'Pipe ' + this.port : 'Port ' + this.port;
+    const bind = typeof this.port === 'string' ? `Pipe ${this.port}` : `Port ${this.port}`;
     switch (error.code) {
-      case 'EACCES':
+      case 'EACCES': {
         console.error(`${bind} requires elevated privileges`);
         process.exit(1);
         break;
-      case 'EADDRINUSE':
+      }
+      case 'EADDRINUSE': {
         console.error(`${bind} is already in use`);
         process.exit(1);
         break;
-      default:
+      }
+      default: {
         throw error;
+      }
     }
   }
 
@@ -146,7 +149,7 @@ export class ApplicationServer {
     const shutdownTimeout = setTimeout(() => {
       console.error('Graceful shutdown timeout, forcing exit...');
       process.exit(1);
-    }, 10000);
+    }, 10_000);
     try {
       if (this.server) {
         console.log('Closing HTTP server...');

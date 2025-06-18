@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 
-import { authService } from '../services/auth.service';
 import { BadRequestError, InternalServerError } from '../../shared/utils/CustomError';
+import { authService } from '../services/auth.service';
 
 /**
  * Authentication Controller Class
@@ -11,6 +11,9 @@ export class AuthController {
   /**
    * Register a new user
    * Validation is handled by middleware
+   * @param req
+   * @param res
+   * @param next
    */
   async register(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
@@ -26,6 +29,9 @@ export class AuthController {
 
   /**
    * Verify user email with token
+   * @param req
+   * @param res
+   * @param next
    */
   async verifyEmail(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
@@ -48,6 +54,9 @@ export class AuthController {
   /**
    * User login
    * Validation is handled by middleware
+   * @param req
+   * @param res
+   * @param next
    */
   async login(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
@@ -63,6 +72,9 @@ export class AuthController {
 
   /**
    * Send password reset email
+   * @param req
+   * @param res
+   * @param next
    */
   async forgotPassword(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
@@ -79,6 +91,9 @@ export class AuthController {
 
   /**
    * Reset password with token
+   * @param req
+   * @param res
+   * @param next
    */
   async resetPassword(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
@@ -100,6 +115,9 @@ export class AuthController {
 
   /**
    * Refresh authentication token
+   * @param req
+   * @param res
+   * @param next
    */
   async refreshToken(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
@@ -115,6 +133,9 @@ export class AuthController {
 
   /**
    * Get current user profile (protected route)
+   * @param req
+   * @param res
+   * @param next
    */
   async getProfile(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
@@ -147,6 +168,9 @@ export class AuthController {
 
   /**
    * Logout user (invalidate token on client side)
+   * @param req
+   * @param res
+   * @param next
    */
   async logout(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {

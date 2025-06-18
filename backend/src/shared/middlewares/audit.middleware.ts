@@ -1,66 +1,84 @@
 import { NextFunction, Request, Response } from 'express';
 import { Types } from 'mongoose';
 
-// Define the type for audit fields
 export interface AuditFields {
+  // For creation (POST)
   createdAt?: Date;
   createdBy?: Types.ObjectId | null;
   updatedAt?: Date;
   updatedBy?: Types.ObjectId | null;
-  version?: number | { $inc: number };
+  version?: number;
   isDeleted?: boolean;
-  deletedAt?: Date;
+  deletedAt?: Date | null;
   deletedBy?: Types.ObjectId | null;
-  $inc?: { version: number };
-  $set?: Record<string, unknown>;
+
+  // For updates (PUT/PATCH/DELETE)
+  $set?: {
+    updatedAt?: Date;
+    updatedBy?: Types.ObjectId | null;
+    isDeleted?: boolean;
+    deletedAt?: Date | null;
+    deletedBy?: Types.ObjectId | null;
+  };
+  $inc?: {
+    version?: number;
+  };
 }
 
-type UserType = { _id?: string } | undefined;
+type UserType = { id?: string } | undefined;
 
-const getAuditFieldsForPost = (now: Date, user: UserType): AuditFields => ({
+const getCreationFields = (now: Date, user: UserType): AuditFields => ({
   createdAt: now,
-  createdBy: user?._id ? new Types.ObjectId(user._id) : null,
+  createdBy: user?.id ? new Types.ObjectId(user.id) : null,
   updatedAt: now,
-  updatedBy: user?._id ? new Types.ObjectId(user._id) : null,
+  updatedBy: user?.id ? new Types.ObjectId(user.id) : null,
   version: 1,
   isDeleted: false,
 });
 
-const getAuditFieldsForPutOrPatch = (now: Date, user: UserType): AuditFields => ({
-  updatedAt: now,
-  updatedBy: user?._id ? new Types.ObjectId(user._id) : null,
+const getUpdateFields = (now: Date, user: UserType): AuditFields => ({
+  $set: {
+    updatedAt: now,
+    updatedBy: user?.id ? new Types.ObjectId(user.id) : null,
+  },
   $inc: { version: 1 },
 });
 
-const getAuditFieldsForDelete = (now: Date, user: UserType): AuditFields => ({
-  updatedAt: now,
-  updatedBy: user?._id ? new Types.ObjectId(user._id) : null,
-  isDeleted: true,
-  deletedAt: now,
-  deletedBy: user?._id ? new Types.ObjectId(user._id) : null,
+const getDeleteFields = (now: Date, user: UserType): AuditFields => ({
+  $set: {
+    updatedAt: now,
+    updatedBy: user?.id ? new Types.ObjectId(user.id) : null,
+    isDeleted: true,
+    deletedAt: now,
+    deletedBy: user?.id ? new Types.ObjectId(user.id) : null,
+  },
   $inc: { version: 1 },
 });
 
 export const auditMiddleware = (req: Request, res: Response, next: NextFunction): void => {
+  if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) {
+    return next();
+  }
+
   const now = new Date();
   const user = req.user as UserType;
 
   switch (req.method) {
     case 'POST': {
-      req.auditFields = getAuditFieldsForPost(now, user);
+      req.auditFields = getCreationFields(now, user);
       break;
     }
     case 'PUT':
     case 'PATCH': {
-      req.auditFields = getAuditFieldsForPutOrPatch(now, user);
+      req.auditFields = getUpdateFields(now, user);
       break;
     }
     case 'DELETE': {
-      req.auditFields = getAuditFieldsForDelete(now, user);
+      req.auditFields = getDeleteFields(now, user);
       break;
     }
     default: {
-      req.auditFields = getAuditFieldsForPost(now, user);
+      req.auditFields = {};
       break;
     }
   }
@@ -68,7 +86,6 @@ export const auditMiddleware = (req: Request, res: Response, next: NextFunction)
   next();
 };
 
-// Type augmentation for Express Request using module augmentation
 declare module 'express-serve-static-core' {
   interface Request {
     auditFields?: AuditFields;

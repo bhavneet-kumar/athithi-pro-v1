@@ -6,7 +6,6 @@ class EmailService {
   private transporter: nodemailer.Transporter;
 
   constructor() {
-    // SMTP ट्रांसपोर्टर सेटअप
     this.transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
@@ -16,18 +15,10 @@ class EmailService {
     });
   }
 
-  /**
-   * यूज़र को वेरिफिकेशन ईमेल भेजे
-   */
   async sendVerificationEmail(to: string, token: string): Promise<void> {
     const verifyUrl = `${config.smtp.FRONTEND_BASE_URL}/verify-email?token=${token}`;
     const subject = 'Verify your email';
-    // const html = `
-    //   <p>Hi,</p>
-    //   <p>Thank you for registering. Please verify your email by clicking the link below:</p>
-    //   <a href="${verifyUrl}">Verify Email</a>
-    //   <p>If you did not request this, please ignore this email.</p>
-    // `;
+
     const html = `
   <div style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 30px;">
     <div style="max-width: 600px; margin: auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
@@ -48,7 +39,7 @@ class EmailService {
 
     console.log(to, "toooooooooooo")
     await this.transporter.sendMail({
-      // from: `"AthithiPro" <${config.smtp.SMTP_USER}>`,
+
       from: `"AthithiPro Team" <no-reply@athithipro.com>`,
       to,
       subject,

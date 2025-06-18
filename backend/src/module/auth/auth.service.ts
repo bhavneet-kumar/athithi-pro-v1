@@ -51,7 +51,7 @@ export class AuthService extends BaseService<IUser> {
       // console.log(existingUser, "^^^^^^^^^^^^")
       const existingUser = (await this.findOne({ email: data.email }, ['agency'])) as IUser & { agency: IAgency };
 
-      console.log(existingUser, "^^^^^^^^^^^^"); // This will now include agency details
+
 
       if (existingUser) {
         throw new BusinessError(
@@ -69,6 +69,7 @@ export class AuthService extends BaseService<IUser> {
       // Generate email verification token
       await user.generateEmailVerificationToken();
 
+      console.log(user, "came here")
       // Send verification email
       await emailService.sendVerificationEmail(user.email, user.emailVerificationToken!);
     } catch (error: any) {

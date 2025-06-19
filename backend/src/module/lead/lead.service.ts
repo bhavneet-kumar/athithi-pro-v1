@@ -21,6 +21,11 @@ export class LeadService extends BaseService<ILead> {
 
   async createLead(data: ILeadCreate, agencyCode: string): Promise<ILead & { agencyCode: string }> {
     try {
+      // Ensure aiScore object exists
+      if (!data.aiScore) {
+        data.aiScore = { value: 0, lastCalculated: new Date() };
+      }
+
       data.aiScore.value = Number(aiScoreCalculator.calculateScore(data as ILead));
 
       // Generate lead number if not set

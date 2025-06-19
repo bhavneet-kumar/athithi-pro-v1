@@ -1,3 +1,4 @@
+/* eslint-disable jsdoc/check-tag-names */
 import { Router } from 'express';
 import passport from 'passport';
 
@@ -17,7 +18,7 @@ import {
 const router = Router();
 
 /**
-* @swagger
+ * @swagger
  * /agencies:
  *   post:
  *     summary: Create a new agency
@@ -68,7 +69,7 @@ router.post(
 );
 
 /**
-* @swagger
+ * @swagger
  * /agencies:
  *   get:
  *     summary: List agencies with pagination and filtering

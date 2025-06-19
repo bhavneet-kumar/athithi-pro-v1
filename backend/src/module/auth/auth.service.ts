@@ -57,7 +57,7 @@ export class AuthService extends BaseService<IUser> {
       if (!isValidObjectId(data.role) && !mongoose.Types.ObjectId.isValid(data.role)) {
         throw new BadRequestError('Invalid role ID format');
       }
-      const role = await Role.findById(data.role);
+      const role = await Role.findOne({ _id: { $eq: data.role } });
       if (!role) {
         throw new BadRequestError('Invalid role provided');
       }

@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 
 import { agencyRoleService } from '../../module/agency/agencyRole.service';
-import { UserRole } from '../../types/enum/user';
+import { IRole } from '../models/role.model';
 import { ForbiddenError } from '../utils/customError';
 
 import { auditMiddleware } from './audit.middleware';
@@ -10,9 +10,7 @@ interface AuthenticatedUser {
   id: string;
   agency: string;
   agencyCode: string;
-  role: {
-    type: UserRole;
-  };
+  role: any;
 }
 
 interface AuthenticatedRequest extends Request {
@@ -21,21 +19,23 @@ interface AuthenticatedRequest extends Request {
 
 export const checkPermission =
   (resource: string, action: string) =>
-  async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
-    if (!req.user) {
-      throw new ForbiddenError('User not authenticated');
-    }
+    async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+      if (!req.user) {
+        throw new ForbiddenError('User not authenticated');
+      }
 
-    const { agency, role } = req.user;
-    const permission = `${resource}:${action}`;
+      const { role } = req.user;
+      const permission = `${resource}:${action}`;
 
-    const hasPermission = await agencyRoleService.hasPermission(agency, role.type, permission);
+      console.log(role, permission, '+++++ROLE&&&&&&&&&&&&&');
 
-    if (!hasPermission) {
-      throw new ForbiddenError(`User does not have ${action} permission for ${resource}`);
-    }
+      const hasPermission = await agencyRoleService.hasPermission(role, permission);
 
-    auditMiddleware(req, res, next);
+      if (!hasPermission) {
+        next(new ForbiddenError(`User does not have ${action} permission for ${resource}`));
+      }
 
-    // next();
-  };
+      auditMiddleware(req, res, next);
+
+      next();
+    };

@@ -73,6 +73,7 @@ export class AuthService extends BaseService<IUser> {
         role: role._id,
         agency: agencyId,
       });
+      await user.save();
       const { token, metaInfo } = await this.createAndSendVerification(user, data.password);
 
       return { user, token, metaInfo };
@@ -115,7 +116,7 @@ export class AuthService extends BaseService<IUser> {
       await metadata.generateEmailVerificationToken();
       const token = metadata.emailVerificationToken;
       const metaInfo = await metadata.save();
-      await emailService.sendVerificationEmail(user.email, token);
+      emailService.sendVerificationEmail(user.email, token);
       return { metadata, token, metaInfo };
     } catch (error) {
       if (error instanceof CustomError) {
@@ -252,7 +253,7 @@ export class AuthService extends BaseService<IUser> {
       if (!metadata.passwordResetToken) {
         throw new InternalServerError('Failed to generate password reset token');
       }
-      await emailService.sendPasswordResetEmail(user.email, metadata.passwordResetToken);
+      emailService.sendPasswordResetEmail(user.email, metadata.passwordResetToken);
     } catch (error) {
       if (error instanceof CustomError) {
         throw error;

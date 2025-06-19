@@ -25,7 +25,6 @@ export interface IRegisterInput {
   role: string;
 }
 
-
 export interface IPasswordResetInput {
   password: string;
 }

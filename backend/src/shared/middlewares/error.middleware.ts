@@ -1,8 +1,10 @@
 // src/shared/middleware/error.middleware.ts
 
+import http from 'node:http';
+
 import { Request, Response, NextFunction } from 'express';
 import { MongooseError } from 'mongoose';
-import http from 'http';
+
 import { DUPLICATE_KEY_ERROR_CODE } from '../constant/validation';
 import { CustomError } from '../utils/customError';
 
@@ -25,8 +27,7 @@ interface ErrorWithName {
   stack?: string;
 }
 
-const isObject = (val: unknown): val is Record<string, unknown> =>
-  val !== null && typeof val === 'object';
+const isObject = (val: unknown): val is Record<string, unknown> => val !== null && typeof val === 'object';
 
 const getErrorProps = (error: unknown): ErrorWithName => {
   if (isObject(error)) {
@@ -46,8 +47,10 @@ const handleObjectError = (err: ErrorWithName) => {
   if (err.name === 'ValidationError' && err.errors) {
     return {
       statusCode: HTTP_STATUS.BAD_REQUEST,
-      message: Object.values(err.errors).map(e => e.message).join(', '),
-      name: 'ValidationError'
+      message: Object.values(err.errors)
+        .map((e) => e.message)
+        .join(', '),
+      name: 'ValidationError',
     };
   }
 
@@ -55,7 +58,7 @@ const handleObjectError = (err: ErrorWithName) => {
     return {
       statusCode: HTTP_STATUS.BAD_REQUEST,
       message: `Invalid value for '${err.path}': ${err.value}`,
-      name: 'CastError'
+      name: 'CastError',
     };
   }
 
@@ -64,7 +67,7 @@ const handleObjectError = (err: ErrorWithName) => {
     return {
       statusCode: HTTP_STATUS.CONFLICT,
       message: `Duplicate value for: ${field}`,
-      name: 'MongoConflictError'
+      name: 'MongoConflictError',
     };
   }
 
@@ -72,7 +75,7 @@ const handleObjectError = (err: ErrorWithName) => {
     return {
       statusCode: HTTP_STATUS.SERVICE_UNAVAILABLE,
       message: 'Redis service is unavailable',
-      name: 'RedisError'
+      name: 'RedisError',
     };
   }
 
@@ -87,19 +90,14 @@ const handleObjectError = (err: ErrorWithName) => {
   return {
     statusCode: HTTP_STATUS.INTERNAL_SERVER_ERROR,
     message: err.message ?? 'Something went wrong',
-    name: err.name ?? 'Error'
+    name: err.name ?? 'Error',
   };
 };
 
 const sendErrorResponse = (
   req: Request,
   res: Response,
-  {
-    statusCode,
-    message,
-    name,
-    stack,
-  }: { statusCode: number; message: string; name?: string; stack?: string }
+  { statusCode, message, name, stack }: { statusCode: number; message: string; name?: string; stack?: string },
 ) => {
   res.status(statusCode).json({
     success: false,
@@ -113,12 +111,7 @@ const sendErrorResponse = (
   });
 };
 
-export const errorHandler = (
-  err: unknown,
-  req: Request,
-  res: Response,
-  next: NextFunction
-): void => {
+export const errorHandler = (err: unknown, req: Request, res: Response, next: NextFunction): void => {
   if (err instanceof CustomError) {
     const payload = handleCustomError(err);
     return sendErrorResponse(req, res, { ...payload, stack: err.stack });
@@ -147,11 +140,7 @@ export const errorHandler = (
     });
   }
 
-  if (
-    err instanceof TypeError ||
-    err instanceof ReferenceError ||
-    err instanceof RangeError
-  ) {
+  if (err instanceof TypeError || err instanceof ReferenceError || err instanceof RangeError) {
     return sendErrorResponse(req, res, {
       statusCode: HTTP_STATUS.INTERNAL_SERVER_ERROR,
       message: err.message,

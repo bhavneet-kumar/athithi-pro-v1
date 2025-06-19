@@ -1,15 +1,15 @@
 import { Request, Response, NextFunction } from 'express';
-import CustomSuccess from '../utils/CustomSuccess';
+
+import CustomSuccess from '../utils/customSuccess';
 
 /**
  * Middleware to attach a standardized success response handler to the response object.
  * Ensures consistent and professional API responses across the application.
+ * @param req
+ * @param res
+ * @param next
  */
-export const successResponseMiddleware = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): void => {
+export const successResponseMiddleware = (req: Request, res: Response, next: NextFunction): void => {
   /**
    * Custom success response function.
    * @param {CustomSuccess} customSuccess - CustomSuccess instance containing response details.
@@ -35,4 +35,3 @@ export const successResponseMiddleware = (
 
   next();
 };
-

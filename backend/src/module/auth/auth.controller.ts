@@ -3,7 +3,7 @@
 import { Request, Response, NextFunction } from 'express';
 
 import { BadRequestError } from '../../shared/utils/customError';
-import { CreatedSuccess, OkSuccess, NoContentSuccess } from '../../shared/utils/CustomSuccess';
+import { CreatedSuccess, OkSuccess, NoContentSuccess } from '../../shared/utils/customSuccess';
 
 import { authService } from './auth.service';
 
@@ -24,7 +24,7 @@ export class AuthController {
       }
       await authService.register(req.body);
       res.customSuccess(
-        new CreatedSuccess(null, 'User created successfully. Please check your email for verification.')
+        new CreatedSuccess(null, 'User created successfully. Please check your email for verification.'),
       );
     } catch (error) {
       next(error);
@@ -40,7 +40,9 @@ export class AuthController {
   async verifyEmail(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { token } = req.params;
-      if (!token) throw new BadRequestError('Verification token is required');
+      if (!token) {
+        throw new BadRequestError('Verification token is required');
+      }
       await authService.verifyEmail(token);
       res.customSuccess(new OkSuccess(null, 'Email verified successfully'));
     } catch (error) {
@@ -77,7 +79,9 @@ export class AuthController {
   async forgotPassword(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { email } = req.body;
-      if (!email) throw new BadRequestError('Email is required');
+      if (!email) {
+        throw new BadRequestError('Email is required');
+      }
       await authService.forgotPassword(email);
       res.customSuccess(new OkSuccess(null, 'Password reset email sent'));
     } catch (error) {
@@ -94,7 +98,9 @@ export class AuthController {
   async resetPassword(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { token } = req.params;
-      if (!token) throw new BadRequestError('Reset token is required');
+      if (!token) {
+        throw new BadRequestError('Reset token is required');
+      }
       await authService.resetPassword(token, req.body);
       res.customSuccess(new OkSuccess(null, 'Password reset successful'));
     } catch (error) {
@@ -111,10 +117,12 @@ export class AuthController {
   async refreshToken(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { refreshToken } = req.body;
-      if (!refreshToken) throw new BadRequestError('Refresh token is required');
-      console.log(refreshToken, "++++++++++++++")
+      if (!refreshToken) {
+        throw new BadRequestError('Refresh token is required');
+      }
+      console.log(refreshToken, '++++++++++++++');
       const result = await authService.refreshToken(req.body);
-      console.log(result, "::::::::::::::::")
+      console.log(result, '::::::::::::::::');
       res.customSuccess(new OkSuccess(result, 'Token refreshed successfully'));
     } catch (error) {
       next(error);

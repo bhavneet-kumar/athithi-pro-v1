@@ -42,8 +42,6 @@ const userSchema = new Schema<IUser>(
     //   minlength: 6,
     // },
 
-
-
     firstName: {
       type: String,
       required: true,
@@ -68,7 +66,6 @@ const userSchema = new Schema<IUser>(
       type: Boolean,
       default: true,
     },
-
 
     // isEmailVerified: {
     //   type: Boolean,

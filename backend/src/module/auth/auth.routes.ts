@@ -51,9 +51,7 @@ const router = Router();
  *                 pattern: '^[0-9a-fA-F]{24}$'
  */
 // Register route with validation and rate limiting
-router.post('/register',
-  signupLimiter,
-  validateBody(registerSchema), authController.register);
+router.post('/register', signupLimiter, validateBody(registerSchema), authController.register);
 
 /**
  =* @swagger

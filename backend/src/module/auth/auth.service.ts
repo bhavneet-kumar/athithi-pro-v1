@@ -100,6 +100,7 @@ export class AuthService extends BaseService<IUser> {
       if (!existingAgency) {
         throw new BadRequestError('Invalid agency provided');
       }
+
       return existingAgency._id as Types.ObjectId;
     }
     throw new BadRequestError('Agency is required');

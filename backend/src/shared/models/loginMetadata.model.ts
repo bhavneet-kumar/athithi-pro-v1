@@ -49,8 +49,11 @@ LoginMetadataSchema.pre('save', async function (next) {
   next();
 });
 
-LoginMetadataSchema.methods.comparePassword = function (candidate: string) {
-  return bcrypt.compare(candidate, this.password);
+LoginMetadataSchema.methods.comparePassword = async function (candidate: string) {
+  console.log(candidate, this.password, '++++++++++++++');
+  const isMatch = await bcrypt.compare(candidate, this.password);
+  console.log(isMatch, '++++++++++++++');
+  return isMatch;
 };
 
 LoginMetadataSchema.methods.generateEmailVerificationToken = async function () {

@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 
-import CustomSuccess from '../utils/customSuccess';
+import CustomSuccess from '../utils/CustomSuccess';
 
 /**
  * Middleware to attach a standardized success response handler to the response object.

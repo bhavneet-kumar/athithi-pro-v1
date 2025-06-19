@@ -2,8 +2,8 @@
 
 import { Request, Response, NextFunction } from 'express';
 
-import { BadRequestError } from '../../shared/utils/customError';
-import { CreatedSuccess, OkSuccess, NoContentSuccess } from '../../shared/utils/customSuccess';
+import { BadRequestError } from '../../shared/utils/CustomError';
+import { CreatedSuccess, OkSuccess, NoContentSuccess } from '../../shared/utils/CustomSuccess';
 
 import { authService } from './auth.service';
 
@@ -59,10 +59,12 @@ export class AuthController {
    */
   async login(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
+      console.log(req.body, '++++++++++++++');
       const { email, password } = req.body;
       if (!email || !password) {
         throw new BadRequestError('Email and password are required');
       }
+      console.log(req.body, '++++++++++++++');
       const result = await authService.login(req.body);
       res.customSuccess(new OkSuccess(result, 'Login successful'));
     } catch (error) {

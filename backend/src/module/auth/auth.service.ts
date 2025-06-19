@@ -1,6 +1,5 @@
 import jwt, { SignOptions, Secret } from 'jsonwebtoken';
 
-
 import { config } from '../../shared/config/index';
 import {
   LOGIN_RATE_LIMITER_TIME,
@@ -22,7 +21,7 @@ import {
   InternalServerError,
   CustomError,
   NotFoundError,
-} from '../../shared/utils/customError';
+} from '../../shared/utils/CustomError';
 import { IAgency } from '../agency/agency.interface';
 
 import { ILoginInput, IRegisterInput, IPasswordResetInput, IRefreshTokenInput, ILoginResponse } from './auth.interface';
@@ -77,6 +76,9 @@ export class AuthService extends BaseService<IUser> {
       });
       await metadata.save();
 
+      // Generate email verification token
+      await user.generateEmailVerificationToken();
+
       // Send verification email
       if (!user.emailVerificationToken) {
         throw new InternalServerError('Failed to generate email verification token');
@@ -115,20 +117,25 @@ export class AuthService extends BaseService<IUser> {
 
   async login(data: ILoginInput): Promise<ILoginResponse> {
     try {
+      console.log(data, '++++++++++++++');
       const user = await this.findOne({ email: data.email });
       if (!user) {
         throw new UnauthorizedError('Invalid credentials');
       }
 
+      console.log(user, '++++++++++++++');
       const metadata = await LoginMetadata.findOne({ userId: user._id });
       if (!metadata) {
         throw new UnauthorizedError('Invalid credentials');
       }
 
+      console.log(metadata, '++++++++++++++');
       this.checkAccountLockStatus(metadata, user);
 
+      console.log(user, 'here', '++++++++++++++');
       await this.verifyUserPassword(user, data.password, metadata);
 
+      console.log(metadata, '++++++++++++++');
       await this.resetFailedLoginAttempts(metadata);
 
       const tokens = this.generateTokens(user.id.toString());
@@ -170,7 +177,8 @@ export class AuthService extends BaseService<IUser> {
    * @throws UnauthorizedError if the password is invalid
    */
   private async verifyUserPassword(user: IUser, password: string, metadata: ILoginMetadata): Promise<void> {
-    const isMatch = await user.comparePassword(password);
+    console.log(password, 'password', '++++++++++++++');
+    const isMatch = await metadata.comparePassword(password);
     if (!isMatch) {
       await this.handleFailedLogin(metadata);
       throw new UnauthorizedError('Invalid credentials');

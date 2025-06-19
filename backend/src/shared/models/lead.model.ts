@@ -101,7 +101,6 @@ const leadSchema = new Schema<ILead>(
     },
     fullName: {
       type: String,
-      required: true,
       unique: true,
     },
     email: {

@@ -2,8 +2,8 @@
 
 import { Request, Response, NextFunction } from 'express';
 
-import { BadRequestError } from '../../shared/utils/CustomError';
-import { CreatedSuccess, OkSuccess, NoContentSuccess } from '../../shared/utils/CustomSuccess';
+import { BadRequestError } from '../../shared/utils/customError';
+import { CreatedSuccess, OkSuccess, NoContentSuccess } from '../../shared/utils/customSuccess';
 
 import { authService } from './auth.service';
 
@@ -22,9 +22,9 @@ export class AuthController {
       if (!req.body?.email || !req.body?.password) {
         throw new BadRequestError('Email and password are required');
       }
-      await authService.register(req.body);
+      const user = await authService.register(req.body);
       res.customSuccess(
-        new CreatedSuccess(null, 'User created successfully. Please check your email for verification.'),
+        new CreatedSuccess(user, 'User created successfully. Please check your email for verification.'),
       );
     } catch (error) {
       next(error);
@@ -122,9 +122,9 @@ export class AuthController {
       if (!refreshToken) {
         throw new BadRequestError('Refresh token is required');
       }
-      console.log(refreshToken, '++++++++++++++');
+
       const result = await authService.refreshToken(req.body);
-      console.log(result, '::::::::::::::::');
+
       res.customSuccess(new OkSuccess(result, 'Token refreshed successfully'));
     } catch (error) {
       next(error);

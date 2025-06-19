@@ -1,12 +1,8 @@
-// src/shared/middleware/error.middleware.ts
-
-import http from 'node:http';
-
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
 import { MongooseError } from 'mongoose';
 
 import { DUPLICATE_KEY_ERROR_CODE } from '../constant/validation';
-import { CustomError } from '../utils/CustomError';
+import { CustomError } from '../utils/customError';
 
 const HTTP_STATUS = {
   INTERNAL_SERVER_ERROR: 500,
@@ -15,11 +11,13 @@ const HTTP_STATUS = {
   SERVICE_UNAVAILABLE: 503,
   UNAUTHORIZED: 401,
 } as const;
+//------NEED TO CORRECT THE FILE ------
 
+type ErrorRecord = Record<string, { message: string }>;
 interface ErrorWithName {
   name?: string;
   message?: string;
-  errors?: Record<string, { message: string }>;
+  errors?: ErrorRecord;
   path?: string;
   value?: unknown;
   code?: number;
@@ -37,122 +35,86 @@ const getErrorProps = (error: unknown): ErrorWithName => {
   return {};
 };
 
-const handleCustomError = (err: CustomError) => ({
-  statusCode: err.httpCode,
-  message: err.message,
-  name: err.name,
-});
+const handleCustomError = (err: CustomError): { statusCode: number; message: string } => {
+  if (err instanceof MongooseError) {
+    return { statusCode: HTTP_STATUS.BAD_REQUEST, message: err.message };
+  }
+  return { statusCode: err.httpCode, message: err.message };
+};
 
-const handleObjectError = (err: ErrorWithName) => {
-  if (err.name === 'ValidationError' && err.errors) {
+const handleObjectError = (err: ErrorWithName): { statusCode: number; message: string } => {
+  const { name, errors, path, value, code, keyValue, message: errMsg } = err;
+
+  if (name === 'ValidationError' && errors) {
     return {
       statusCode: HTTP_STATUS.BAD_REQUEST,
-      message: Object.values(err.errors)
+      message: Object.values(errors)
         .map((e) => e.message)
         .join(', '),
-      name: 'ValidationError',
     };
   }
-
-  if (err.name === 'CastError') {
+  if (name === 'CastError') {
     return {
       statusCode: HTTP_STATUS.BAD_REQUEST,
-      message: `Invalid value for '${err.path}': ${err.value}`,
-      name: 'CastError',
+      message: `Invalid value for '${path}': ${value}`,
     };
   }
-
-  if (err.code === DUPLICATE_KEY_ERROR_CODE && err.keyValue) {
-    const field = Object.keys(err.keyValue).join(', ');
+  if (code === DUPLICATE_KEY_ERROR_CODE && keyValue) {
+    const field = Object.keys(keyValue).join(', ');
     return {
       statusCode: HTTP_STATUS.CONFLICT,
-      message: `Duplicate value for: ${field}`,
-      name: 'MongoConflictError',
+      message: `Duplicate field value entered: ${field}`,
     };
   }
-
-  if (typeof err.message === 'string' && err.message.toLowerCase().includes('redis')) {
-    return {
-      statusCode: HTTP_STATUS.SERVICE_UNAVAILABLE,
-      message: 'Redis service is unavailable',
-      name: 'RedisError',
-    };
+  if (typeof errMsg === 'string' && errMsg.toLowerCase().includes('redis')) {
+    return { statusCode: HTTP_STATUS.SERVICE_UNAVAILABLE, message: 'Redis service is unavailable' };
   }
-
-  if (err.name === 'JsonWebTokenError') {
-    return { statusCode: HTTP_STATUS.UNAUTHORIZED, message: 'Invalid token', name: 'JsonWebTokenError' };
+  if (name === 'JsonWebTokenError') {
+    return { statusCode: HTTP_STATUS.UNAUTHORIZED, message: 'Invalid token' };
   }
-
-  if (err.name === 'TokenExpiredError') {
-    return { statusCode: HTTP_STATUS.UNAUTHORIZED, message: 'Token expired', name: 'TokenExpiredError' };
+  if (name === 'TokenExpiredError') {
+    return { statusCode: HTTP_STATUS.UNAUTHORIZED, message: 'Token has expired' };
   }
-
-  return {
-    statusCode: HTTP_STATUS.INTERNAL_SERVER_ERROR,
-    message: err.message ?? 'Something went wrong',
-    name: err.name ?? 'Error',
-  };
+  return { statusCode: HTTP_STATUS.INTERNAL_SERVER_ERROR, message: 'Something went wrong' };
 };
 
 const sendErrorResponse = (
-  req: Request,
   res: Response,
-  { statusCode, message, name, stack }: { statusCode: number; message: string; name?: string; stack?: string },
-) => {
+  errorDetails: { statusCode: number; message: string; name?: string; stack?: string },
+): void => {
+  const { statusCode, message, name = 'Error', stack } = errorDetails;
   res.status(statusCode).json({
     success: false,
-    code: statusCode,
-    status: (http.STATUS_CODES[statusCode] || 'Error').toUpperCase(),
-    message,
-    data: null,
-    timestamp: new Date().toISOString(),
-    path: req.originalUrl,
+    statusCode,
+    error: { name, message },
     ...(process.env.NODE_ENV === 'development' && stack ? { stack } : {}),
   });
 };
 
-export const errorHandler = (err: unknown, req: Request, res: Response, next: NextFunction): void => {
+export const errorHandler = (err: unknown, req: Request, res: Response): void => {
   if (err instanceof CustomError) {
-    const payload = handleCustomError(err);
-    return sendErrorResponse(req, res, { ...payload, stack: err.stack });
-  }
-
-  if (err instanceof MongooseError) {
-    return sendErrorResponse(req, res, {
-      statusCode: HTTP_STATUS.BAD_REQUEST,
-      message: err.message,
-      name: err.name,
-      stack: err.stack,
-    });
+    const { statusCode, message } = handleCustomError(err);
+    sendErrorResponse(res, { statusCode, message, name: err.name });
+    return;
   }
 
   if (isObject(err)) {
-    const props = getErrorProps(err);
-    const payload = handleObjectError(props);
-    return sendErrorResponse(req, res, { ...payload, stack: props.stack });
-  }
-
-  if (err instanceof SyntaxError && 'body' in err) {
-    return sendErrorResponse(req, res, {
-      statusCode: HTTP_STATUS.BAD_REQUEST,
-      message: 'Invalid JSON payload',
-      name: 'SyntaxError',
-    });
+    const errorProps = getErrorProps(err);
+    const { statusCode, message } = handleObjectError(errorProps);
+    sendErrorResponse(res, { statusCode, message, name: errorProps.name || 'Error', stack: errorProps.stack });
+    return;
   }
 
   if (err instanceof TypeError || err instanceof ReferenceError || err instanceof RangeError) {
-    return sendErrorResponse(req, res, {
-      statusCode: HTTP_STATUS.INTERNAL_SERVER_ERROR,
-      message: err.message,
-      name: err.name,
-      stack: err.stack,
-    });
+    sendErrorResponse(res, { statusCode: HTTP_STATUS.INTERNAL_SERVER_ERROR, message: (err as Error).message });
+    return;
   }
 
-  console.error('❌ Unhandled Error:', err);
-  return sendErrorResponse(req, res, {
-    statusCode: HTTP_STATUS.INTERNAL_SERVER_ERROR,
-    message: 'Something went wrong',
-    name: 'UnknownError',
-  });
+  if (err instanceof SyntaxError && 'body' in err) {
+    sendErrorResponse(res, { statusCode: HTTP_STATUS.BAD_REQUEST, message: 'Invalid JSON payload' });
+    return;
+  }
+
+  console.error('❌ Unhandled error:', err);
+  sendErrorResponse(res, { statusCode: HTTP_STATUS.INTERNAL_SERVER_ERROR, message: 'Something went wrong' });
 };

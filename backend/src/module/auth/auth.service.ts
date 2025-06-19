@@ -1,4 +1,6 @@
 import jwt, { SignOptions, Secret } from 'jsonwebtoken';
+import { Types, isValidObjectId } from 'mongoose';
+import { ZodError } from 'zod';
 
 import { config } from '../../shared/config/index';
 import {
@@ -8,10 +10,11 @@ import {
   TWENTY_FOUR_HOURS_IN_MILLISECONDS,
 } from '../../shared/constant/timeValues';
 import { MAX_LOGIN_ATTEMPTS } from '../../shared/constant/validation';
+import { Agency } from '../../shared/models/agency.model';
 import { ILoginMetadata, LoginMetadata } from '../../shared/models/loginMetadata.model';
 import { Role } from '../../shared/models/role.model';
 import { User, IUser } from '../../shared/models/user.model';
-import { BaseService } from '../../shared/services/BaseService';
+import { BaseService } from '../../shared/services/base.service';
 import { emailService } from '../../shared/services/email.service';
 import {
   BadRequestError,
@@ -21,8 +24,10 @@ import {
   InternalServerError,
   CustomError,
   NotFoundError,
-} from '../../shared/utils/CustomError';
+} from '../../shared/utils/customError';
 import { IAgency } from '../agency/agency.interface';
+import { agencyService } from '../agency/agency.service';
+import { createAgencySchema } from '../agency/agency.validator';
 
 import { ILoginInput, IRegisterInput, IPasswordResetInput, IRefreshTokenInput, ILoginResponse } from './auth.interface';
 
@@ -47,48 +52,75 @@ export class AuthService extends BaseService<IUser> {
     super(User, 'User');
   }
 
-  async register(data: IRegisterInput): Promise<void> {
+  async register(data: IRegisterInput): Promise<{ user: IUser; token: string; metaInfo: ILoginMetadata }> {
     try {
-      // Validate role exists
-      const roleExists = await Role.findById(data.role);
-      if (!roleExists) {
+      if (!isValidObjectId(data.role)) {
+        throw new BadRequestError('Invalid role ID format');
+      }
+      const role = await Role.findById(data.role);
+      if (!role) {
         throw new BadRequestError('Invalid role provided');
       }
-
-      const existingUser = (await this.findOne({ email: data.email }, ['agency'])) as IUser & { agency: IAgency };
-
-      if (existingUser) {
-        throw new BusinessError(
-          `User with this email already exists for Agency: ${existingUser.agency.name}, Database unique Id: ${existingUser.agency._id}`,
-        );
+      const agencyId = await this.resolveAgency(data.agency as IAgency);
+      const dup = await User.findOne({ email: { $eq: data.email } });
+      if (dup) {
+        throw new BusinessError(`User already exists in this agency`);
       }
-
-      // Create new user - use User model directly to avoid type conflicts
       const user = new User({
-        ...data,
-        role: roleExists._id,
+        email: data.email,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        role: role._id,
+        agency: agencyId,
       });
-      await user.save();
+      const { token, metaInfo } = await this.createAndSendVerification(user, data.password);
 
-      const metadata = new LoginMetadata({
-        userId: user._id,
-        password: data.password,
-      });
-      await metadata.save();
-
-      // Generate email verification token
-      await user.generateEmailVerificationToken();
-
-      // Send verification email
-      if (!user.emailVerificationToken) {
-        throw new InternalServerError('Failed to generate email verification token');
-      }
-      await emailService.sendVerificationEmail(user.email, user.emailVerificationToken);
+      return { user, token, metaInfo };
     } catch (error) {
+      if (error instanceof ZodError) {
+        throw new BadRequestError(`Invalid agency data: ${error.errors.map((e) => e.message).join(', ')}`);
+      }
       if (error instanceof CustomError) {
         throw error;
       }
       throw new InternalServerError(`Registration failed: ${error.message}`);
+    }
+  }
+
+  private async resolveAgency(agency: IAgency): Promise<Types.ObjectId | string> {
+    if (agency && typeof agency === 'object') {
+      const validatedAgency = createAgencySchema.parse(agency);
+      const createdAgency = await agencyService.createAgency(validatedAgency);
+      return createdAgency._id as Types.ObjectId;
+    } else if (agency) {
+      if (!isValidObjectId(agency)) {
+        throw new BadRequestError('Invalid agency ID format');
+      }
+      const existingAgency = await Agency.findOne({ _id: { $eq: agency } });
+      if (!existingAgency) {
+        throw new BadRequestError('Invalid agency provided');
+      }
+      return existingAgency._id as Types.ObjectId;
+    }
+    throw new BadRequestError('Agency is required');
+  }
+
+  private async createAndSendVerification(
+    user: IUser,
+    password: string,
+  ): Promise<{ metadata: ILoginMetadata; token: string; metaInfo: ILoginMetadata }> {
+    try {
+      const metadata = new LoginMetadata({ userId: user._id, password });
+      await metadata.generateEmailVerificationToken();
+      const token = metadata.emailVerificationToken;
+      const metaInfo = await metadata.save();
+      await emailService.sendVerificationEmail(user.email, token);
+      return { metadata, token, metaInfo };
+    } catch (error) {
+      if (error instanceof CustomError) {
+        throw error;
+      }
+      throw new InternalServerError(`Email verification failed: ${error.message}`);
     }
   }
 
@@ -117,7 +149,6 @@ export class AuthService extends BaseService<IUser> {
 
   async login(data: ILoginInput): Promise<ILoginResponse> {
     try {
-      console.log(data, '++++++++++++++');
       const user = await this.findOne({ email: data.email });
       if (!user) {
         throw new UnauthorizedError('Invalid credentials');
@@ -177,7 +208,6 @@ export class AuthService extends BaseService<IUser> {
    * @throws UnauthorizedError if the password is invalid
    */
   private async verifyUserPassword(user: IUser, password: string, metadata: ILoginMetadata): Promise<void> {
-    console.log(password, 'password', '++++++++++++++');
     const isMatch = await metadata.comparePassword(password);
     if (!isMatch) {
       await this.handleFailedLogin(metadata);
@@ -207,7 +237,7 @@ export class AuthService extends BaseService<IUser> {
 
   async forgotPassword(email: string): Promise<void> {
     try {
-      const user = await User.findOne({ email });
+      const user = await User.findOne({ email: { $eq: email } });
       if (!user) {
         throw new NotFoundError('User not found');
       }

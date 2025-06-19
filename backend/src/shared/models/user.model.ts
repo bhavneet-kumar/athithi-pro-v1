@@ -1,14 +1,13 @@
 import crypto from 'node:crypto';
 
-import bcrypt from 'bcryptjs';
 import { Schema, model, Document, Types } from 'mongoose';
 
-import { BCRYPT_SALT_ROUNDS, CRYPTO_RANDOM_BYTES } from '../constant/encryption';
+import { CRYPTO_RANDOM_BYTES } from '../constant/encryption';
 import { THIRTY_MINUTES_IN_MILLISECONDS, TWENTY_FOUR_HOURS_IN_MILLISECONDS } from '../constant/timeValues';
 
 export interface IUser extends Document {
   email: string;
-  password: string;
+  // password: string;
   firstName: string;
   lastName: string;
   agency: Types.ObjectId;
@@ -41,7 +40,6 @@ const userSchema = new Schema<IUser>(
     //   required: true,
     //   minlength: 6,
     // },
-
     firstName: {
       type: String,
       required: true,
@@ -66,11 +64,10 @@ const userSchema = new Schema<IUser>(
       type: Boolean,
       default: true,
     },
-
-    // isEmailVerified: {
-    //   type: Boolean,
-    //   default: false,
-    // },
+    isEmailVerified: {
+      type: Boolean,
+      default: false,
+    },
     // emailVerificationToken: String,
     // emailVerificationExpires: Date,
     // passwordResetToken: String,
@@ -91,24 +88,24 @@ const userSchema = new Schema<IUser>(
 userSchema.index({ agency: 1, email: 1 }, { unique: true });
 
 // Hash password before saving
-userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) {
-    return next();
-  }
+// userSchema.pre('save', async function (next) {
+//   if (!this.isModified('password')) {
+//     return next();
+//   }
 
-  try {
-    const salt = await bcrypt.genSalt(BCRYPT_SALT_ROUNDS);
-    this.password = await bcrypt.hash(this.password, salt);
-    next();
-  } catch (error) {
-    next(error);
-  }
-});
+//   try {
+//     const salt = await bcrypt.genSalt(BCRYPT_SALT_ROUNDS);
+//     this.password = await bcrypt.hash(this.password, salt);
+//     next();
+//   } catch (error) {
+//     next(error);
+//   }
+// });
 
 // Compare password method
-userSchema.methods.comparePassword = async function (candidatePassword: string): Promise<boolean> {
-  return bcrypt.compare(candidatePassword, this.password);
-};
+// userSchema.methods.comparePassword = async function (candidatePassword: string): Promise<boolean> {
+//   return bcrypt.compare(candidatePassword, this.password);
+// };
 
 // Generate email verification token
 userSchema.methods.generateEmailVerificationToken = async function (): Promise<void> {

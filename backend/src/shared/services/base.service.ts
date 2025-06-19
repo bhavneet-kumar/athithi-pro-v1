@@ -1,6 +1,6 @@
 import { Document, Model, FilterQuery, UpdateQuery, QueryOptions } from 'mongoose';
 
-import { NotFoundError, BadRequestError, InternalServerError, BusinessError } from '../utils/CustomError';
+import { NotFoundError, BadRequestError, InternalServerError, BusinessError } from '../utils/customError';
 
 // Constants for magic numbers
 const PAGINATION_DEFAULT_LIMIT = 10;

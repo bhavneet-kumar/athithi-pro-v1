@@ -5,9 +5,7 @@ import helmet from 'helmet';
 export const securityMiddleware = [
   helmet(),
   cors({
-    origin: (origin, callback) => {
-      callback(null, origin); // every origin allowed
-    },
+    origin: true, // allow all origins
     credentials: true,
   }),
 ];

@@ -49,21 +49,18 @@ LoginMetadataSchema.pre('save', async function (next) {
   next();
 });
 
-LoginMetadataSchema.methods.comparePassword = async function (candidate: string) {
-  console.log(candidate, this.password, '++++++++++++++');
-  const isMatch = await bcrypt.compare(candidate, this.password);
-  console.log(isMatch, '++++++++++++++');
-  return isMatch;
+LoginMetadataSchema.methods.comparePassword = function (candidate: string): Promise<boolean> {
+  return bcrypt.compare(candidate, this.password);
 };
 
-LoginMetadataSchema.methods.generateEmailVerificationToken = async function () {
+LoginMetadataSchema.methods.generateEmailVerificationToken = async function (): Promise<void> {
   const token = crypto.randomBytes(CRYPTO_RANDOM_BYTES).toString('hex');
   this.emailVerificationToken = token;
   this.emailVerificationExpires = new Date(Date.now() + TWENTY_FOUR_HOURS_IN_MILLISECONDS);
   await this.save();
 };
 
-LoginMetadataSchema.methods.generatePasswordResetToken = async function () {
+LoginMetadataSchema.methods.generatePasswordResetToken = async function (): Promise<void> {
   const token = crypto.randomBytes(CRYPTO_RANDOM_BYTES).toString('hex');
   this.passwordResetToken = token;
   this.passwordResetExpires = new Date(Date.now() + THIRTY_MINUTES_IN_MILLISECONDS);

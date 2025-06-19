@@ -1,6 +1,6 @@
 import { Router } from 'express';
 
-import { passwordResetLimiter } from '../../shared/middlewares/rateLimiter.middleware';
+import { loginLimiter, passwordResetLimiter } from '../../shared/middlewares/rateLimiter.middleware';
 import { validateBody, validateParams } from '../../shared/middlewares/validation.middleware';
 
 import { authController } from './auth.controller';
@@ -97,7 +97,7 @@ router.get('/verify-email/:token', validateParams(tokenParamSchema), authControl
  *                 type: string
  */
 // Login route with validation, rate limiting and account locking
-router.post('/login', validateBody(loginSchema), authController.login);
+router.post('/login', loginLimiter, validateBody(loginSchema), authController.login);
 
 /**
 = * @swagger

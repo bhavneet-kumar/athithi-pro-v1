@@ -88,6 +88,16 @@ export class AuthService extends BaseService<IUser> {
 
       }
 
+      if (typeof data.email !== 'string') {
+        throw new BadRequestError('Email must be a string');
+      }
+
+      const safeEmailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!safeEmailRegex.test(data.email)) {
+        throw new BadRequestError('Invalid email format');
+      }
+
+
       // 3) Prevent duplicate user in same agency
       const dup = await User.findOne({ email: { $eq: data.email } });
 

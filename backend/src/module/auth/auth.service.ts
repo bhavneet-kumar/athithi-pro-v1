@@ -63,7 +63,6 @@ export class AuthService extends BaseService<IUser> {
       if (data.agency && typeof data.agency === 'object') {
         // data.agency.domain = data.agency.code.toLowerCase() + ".com";
 
-        // console.log(data, "&&&&&&&&&&&&&&&");
         const validatedAgency = createAgencySchema.parse(data.agency);
 
         const agency = await agencyService.createAgency(validatedAgency);
@@ -72,7 +71,13 @@ export class AuthService extends BaseService<IUser> {
 
       } else if (data.agency) {
 
-        const existingAgency = await Agency.findById(data.agency);
+        if (typeof data.agency !== 'string') {
+          throw new BadRequestError('Invalid agency ID format');
+        }
+
+        // Use $eq operator to sanitize input
+        const existingAgency = await Agency.findOne({ _id: { $eq: data.agency } });
+
         if (!existingAgency) throw new BadRequestError('Invalid agency provided');
 
         agencyId = existingAgency._id as Types.ObjectId;
@@ -83,8 +88,12 @@ export class AuthService extends BaseService<IUser> {
 
       }
 
+      if (typeof data.email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+        throw new BadRequestError('Invalid email format');
+      }
+
       // 3) Prevent duplicate user in same agency
-      const dup = await User.findOne({ email: data.email });
+      const dup = await User.findOne({ email: { $eq: data.email } });
 
       if (dup) {
         throw new BusinessError(`User already exists in this agency`);
@@ -233,7 +242,8 @@ export class AuthService extends BaseService<IUser> {
 
   async forgotPassword(email: string): Promise<void> {
     try {
-      const user = await User.findOne({ email });
+
+      const user = await User.findOne({ email: { $eq: email } });
       if (!user) {
         throw new NotFoundError('User not found');
       }

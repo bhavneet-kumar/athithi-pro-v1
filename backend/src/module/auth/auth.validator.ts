@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 import { PASSWORD_MIN_LENGTH, PASSWORD_MAX_LENGTH } from '../../shared/constant/validation';
-import { createAgencySchema } from '../../module/agency/agency.validator'; // ✅ correct path adjust karo
+import { createAgencySchema } from '../agency/agency.validator'; // ✅ correct path adjust karo
 
 // Magic numbers for validation
 const EMAIL_MAX_LENGTH = 255;

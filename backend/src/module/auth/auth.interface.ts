@@ -28,7 +28,6 @@ export interface IRegisterInput {
   agency: string | IAgency;
 }
 
-
 export interface IPasswordResetInput {
   password: string;
 }

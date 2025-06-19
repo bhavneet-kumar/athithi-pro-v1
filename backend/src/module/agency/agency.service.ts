@@ -1,12 +1,12 @@
 import { Agency } from '../../shared/models/agency.model';
-import { BaseService } from '../../shared/services/BaseService';
+import { BaseService } from '../../shared/services/base.service';
 import {
   BadRequestError,
   NotFoundError,
   BusinessError,
   InternalServerError,
   CustomError,
-} from '../../shared/utils/CustomError';
+} from '../../shared/utils/customError';
 
 import { AgencyFilters, AgencySortOptions, IAgency } from './agency.interface';
 import { CreateAgencyInput, UpdateAgencyInput } from './agency.validator';

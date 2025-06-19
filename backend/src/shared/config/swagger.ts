@@ -1,9 +1,18 @@
-import fs from 'node:fs';
+import swaggerJsdoc from 'swagger-jsdoc';
 
-import yaml from 'js-yaml';
+const options = {
+  definition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'Your API',
+      version: '1.0.0',
+    },
+  },
+  apis: [
+    './src/module/**/*.ts', // <-- Make sure this includes all your controllers!
+  ],
+};
 
-const swaggerDocument = yaml.load(fs.readFileSync('./docs/swagger.yaml', 'utf8')) as Record<string, unknown>;
-
-export { swaggerDocument };
+export const swaggerDocument = swaggerJsdoc(options);
 
 export { default as swaggerUi } from 'swagger-ui-express';

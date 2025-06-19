@@ -9,5 +9,5 @@ export const securityMiddleware = [
       callback(null, origin); // every origin allowed
     },
     credentials: true,
-  })
+  }),
 ];

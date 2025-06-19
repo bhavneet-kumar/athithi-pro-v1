@@ -77,6 +77,9 @@ export class AuthService extends BaseService<IUser> {
       });
       await metadata.save();
 
+      // Generate email verification token
+      await user.generateEmailVerificationToken();
+
       // Send verification email
       if (!user.emailVerificationToken) {
         throw new InternalServerError('Failed to generate email verification token');

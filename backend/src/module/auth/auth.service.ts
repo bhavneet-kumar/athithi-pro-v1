@@ -1,5 +1,5 @@
 import jwt, { SignOptions, Secret } from 'jsonwebtoken';
-import { Types, isValidObjectId } from 'mongoose';
+import mongoose, { Types, isValidObjectId } from 'mongoose';
 import { ZodError } from 'zod';
 
 import { config } from '../../shared/config/index';
@@ -54,7 +54,7 @@ export class AuthService extends BaseService<IUser> {
 
   async register(data: IRegisterInput): Promise<{ user: IUser; token: string; metaInfo: ILoginMetadata }> {
     try {
-      if (!isValidObjectId(data.role)) {
+      if (!isValidObjectId(data.role) && !mongoose.Types.ObjectId.isValid(data.role)) {
         throw new BadRequestError('Invalid role ID format');
       }
       const role = await Role.findById(data.role);

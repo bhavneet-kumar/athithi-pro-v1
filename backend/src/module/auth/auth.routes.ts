@@ -10,6 +10,7 @@ import {
   refreshTokenSchema,
   forgotPasswordSchema,
   tokenParamSchema,
+  loginSchema,
 } from './auth.validator';
 
 const router = Router();
@@ -96,7 +97,7 @@ router.get('/verify-email/:token', validateParams(tokenParamSchema), authControl
  *                 type: string
  */
 // Login route with validation, rate limiting and account locking
-router.post('/login', authController.login);
+router.post('/login', validateBody(loginSchema), authController.login);
 
 /**
 = * @swagger

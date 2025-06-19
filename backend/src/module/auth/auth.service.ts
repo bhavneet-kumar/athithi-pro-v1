@@ -88,10 +88,6 @@ export class AuthService extends BaseService<IUser> {
 
       }
 
-      if (typeof data.email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
-        throw new BadRequestError('Invalid email format');
-      }
-
       // 3) Prevent duplicate user in same agency
       const dup = await User.findOne({ email: { $eq: data.email } });
 

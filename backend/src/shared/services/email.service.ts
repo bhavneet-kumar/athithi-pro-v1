@@ -17,7 +17,7 @@ class EmailService {
   }
 
   async sendVerificationEmail(to: string, token: string): Promise<void> {
-    const verifyUrl = `${config.smtp.FRONTEND_BASE_URL}/verify-email?token=${token}`;
+    const verifyUrl = `${config.smtp.FRONTEND_BASE_URL}/confirm-email/${token}`;
     const subject = 'Verify your email';
 
     const html = `
@@ -47,7 +47,7 @@ class EmailService {
   }
 
   async sendPasswordResetEmail(to: string, token: string): Promise<void> {
-    const resetUrl = `${config.smtp.FRONTEND_BASE_URL}/reset-password?token=${token}`;
+    const resetUrl = `${config.smtp.FRONTEND_BASE_URL}/reset-password/${token}`;
     const subject = 'Reset your password';
 
     const html = `

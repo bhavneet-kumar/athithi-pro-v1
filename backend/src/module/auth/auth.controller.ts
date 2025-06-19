@@ -22,9 +22,9 @@ export class AuthController {
       if (!req.body?.email || !req.body?.password) {
         throw new BadRequestError('Email and password are required');
       }
-      await authService.register(req.body);
+      let user = await authService.register(req.body);
       res.customSuccess(
-        new CreatedSuccess(null, 'User created successfully. Please check your email for verification.')
+        new CreatedSuccess(user, 'User created successfully. Please check your email for verification.')
       );
     } catch (error) {
       next(error);

@@ -52,7 +52,7 @@ const router = Router();
  */
 // Register route with validation and rate limiting
 router.post('/register',
-  signupLimiter,
+  // signupLimiter,
   validateBody(registerSchema), authController.register);
 
 /**

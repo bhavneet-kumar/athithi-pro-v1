@@ -1,7 +1,7 @@
 import jwt, { SignOptions, Secret } from 'jsonwebtoken';
 
 import { ILoginMetadata, LoginMetadata } from '../../shared/models/loginMetadata.model';
-
+import { ZodError } from 'zod';
 import { config } from '../../shared/config/index';
 import {
   LOGIN_RATE_LIMITER_TIME,
@@ -12,6 +12,7 @@ import {
 import { MAX_LOGIN_ATTEMPTS } from '../../shared/constant/validation';
 import { Role } from '../../shared/models/role.model';
 import { User, IUser } from '../../shared/models/user.model';
+import { Agency } from '../../shared/models/agency.model';
 import { BaseService } from '../../shared/services/BaseService';
 import { emailService } from '../../shared/services/email.service';
 import {
@@ -23,9 +24,12 @@ import {
   CustomError,
   NotFoundError,
 } from '../../shared/utils/CustomError';
-import { IAgency } from '../agency/agency.interface';
 
+import { IAgency } from '../agency/agency.interface';
+import { Types } from 'mongoose';
 import { ILoginInput, IRegisterInput, IPasswordResetInput, IRefreshTokenInput, ILoginResponse } from './auth.interface';
+import { agencyService } from '../agency/agency.service';
+import { createAgencySchema } from '../agency/agency.validator';
 
 export class AuthService extends BaseService<IUser> {
   private readonly tokenOptions: SignOptions = {
@@ -48,48 +52,75 @@ export class AuthService extends BaseService<IUser> {
     super(User, 'User');
   }
 
-  async register(data: IRegisterInput): Promise<void> {
+  async register(data: IRegisterInput): Promise<{ user: IUser, token: string, metaInfo: ILoginMetadata }> {
     try {
-      // Validate role exists
+      // 1) Validate role
       const roleExists = await Role.findById(data.role);
-      if (!roleExists) {
-        throw new BadRequestError('Invalid role provided');
+      if (!roleExists) throw new BadRequestError('Invalid role provided');
+
+      // 2) Resolve agency → either create or validate
+      let agencyId: Types.ObjectId | string;
+      if (data.agency && typeof data.agency === 'object') {
+        // data.agency.domain = data.agency.code.toLowerCase() + ".com";
+
+        // console.log(data, "&&&&&&&&&&&&&&&");
+        const validatedAgency = createAgencySchema.parse(data.agency);
+
+        const agency = await agencyService.createAgency(validatedAgency);
+
+        agencyId = agency._id as Types.ObjectId;;
+
+      } else if (data.agency) {
+
+        const existingAgency = await Agency.findById(data.agency);
+        if (!existingAgency) throw new BadRequestError('Invalid agency provided');
+
+        agencyId = existingAgency._id as Types.ObjectId;
+
+      } else {
+
+        throw new BadRequestError('Agency is required');
+
       }
 
-      const existingUser = (await this.findOne({ email: data.email }, ['agency'])) as IUser & { agency: IAgency };
+      // 3) Prevent duplicate user in same agency
+      const dup = await User.findOne({ email: data.email });
 
-      if (existingUser) {
-        throw new BusinessError(
-          `User with this email already exists for Agency: ${existingUser.agency.name}, Database unique Id: ${existingUser.agency._id}`,
-        );
+      if (dup) {
+        throw new BusinessError(`User already exists in this agency`);
       }
 
-      // Create new user - use User model directly to avoid type conflicts
+      // 4) Create user with resolved agencyId
       const user = new User({
-        ...data,
+        email: data.email,
+        // password: data.password,
+        firstName: data.firstName,
+        lastName: data.lastName,
         role: roleExists._id,
+        agency: agencyId,
       });
       await user.save();
+      // ✅ Generate token on user
+      // await user.generateEmailVerificationToken();
 
-      const metadata = new LoginMetadata({
-        userId: user._id,
-        password: data.password,
-      });
-      await metadata.save();
+      // 5) Store metadata & send verification
+      const metadata = new LoginMetadata({ userId: user._id, password: data.password });
+      await metadata.generateEmailVerificationToken();
+      const token = metadata.emailVerificationToken;
 
-      // Generate email verification token
-      await user.generateEmailVerificationToken();
+      const metaInfo = await metadata.save();
 
-      // Send verification email
-      if (!user.emailVerificationToken) {
-        throw new InternalServerError('Failed to generate email verification token');
-      }
+
       await emailService.sendVerificationEmail(user.email, user.emailVerificationToken);
-    } catch (error) {
-      if (error instanceof CustomError) {
-        throw error;
+
+
+      return { user, token: token, metaInfo };
+    } catch (err) {
+      if (err instanceof ZodError) {
+        throw new BadRequestError(`Invalid agency data: ${err.errors.map(e => e.message).join(', ')}`);
       }
-      throw new InternalServerError(`Registration failed: ${error.message}`);
+      if (err instanceof CustomError) throw err;
+      throw new InternalServerError(`Registration failed: ${err.message}`);
     }
   }
 
@@ -173,7 +204,7 @@ export class AuthService extends BaseService<IUser> {
    * @throws UnauthorizedError if the password is invalid
    */
   private async verifyUserPassword(user: IUser, password: string, metadata: ILoginMetadata): Promise<void> {
-    const isMatch = await user.comparePassword(password);
+    const isMatch = await metadata.comparePassword(password);
     if (!isMatch) {
       await this.handleFailedLogin(metadata);
       throw new UnauthorizedError('Invalid credentials');

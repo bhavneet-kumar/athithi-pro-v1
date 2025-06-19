@@ -44,6 +44,7 @@ export class AgencyService extends BaseService<IAgency> {
       }
 
       // Create the agency - use model directly to avoid interface conflicts
+
       const agency = new Agency(data);
       await agency.save();
 

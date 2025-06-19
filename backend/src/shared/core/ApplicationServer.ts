@@ -4,7 +4,7 @@ import { Socket } from 'node:net';
 import { Application } from 'express';
 
 import { connectDB, closeDB } from '../config/db';
-import { InternalServerError } from '../utils/customError';
+import { InternalServerError } from '../utils/CustomError';
 
 // ApplicationServer handles server lifecycle and graceful shutdown
 export class ApplicationServer {

@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 
-import { BadRequestError, CustomError, NotFoundError } from '../../shared/utils/customError';
-import { CreatedSuccess, NoContentSuccess } from '../../shared/utils/customSuccess';
+import { BadRequestError, CustomError, NotFoundError } from '../../shared/utils/CustomError';
+import { CreatedSuccess, NoContentSuccess } from '../../shared/utils/CustomSuccess';
 
 import { AgencyFilters, AgencyQueryParams, AgencySortOptions } from './agency.interface';
 import { agencyService } from './agency.service';

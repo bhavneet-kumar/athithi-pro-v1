@@ -1,6 +1,6 @@
 import jwt, { SignOptions, Secret } from 'jsonwebtoken';
 
-import { ILoginMetadata, LoginMetadata } from 'shared/models/loginMetadata.model';
+import { ILoginMetadata, LoginMetadata } from '../../shared/models/loginMetadata.model';
 
 import { config } from '../../shared/config/index';
 import {
@@ -12,7 +12,7 @@ import {
 import { MAX_LOGIN_ATTEMPTS } from '../../shared/constant/validation';
 import { Role } from '../../shared/models/role.model';
 import { User, IUser } from '../../shared/models/user.model';
-import { BaseService } from '../../shared/services/baseService';
+import { BaseService } from '../../shared/services/BaseService';
 import { emailService } from '../../shared/services/email.service';
 import {
   BadRequestError,
@@ -22,7 +22,7 @@ import {
   InternalServerError,
   CustomError,
   NotFoundError,
-} from '../../shared/utils/customError';
+} from '../../shared/utils/CustomError';
 import { IAgency } from '../agency/agency.interface';
 
 import { ILoginInput, IRegisterInput, IPasswordResetInput, IRefreshTokenInput, ILoginResponse } from './auth.interface';

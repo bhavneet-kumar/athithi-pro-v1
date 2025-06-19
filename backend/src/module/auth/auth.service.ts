@@ -95,7 +95,7 @@ export class AuthService extends BaseService<IUser> {
       if (typeof data.email !== 'string') {
         throw new BadRequestError('Email must be a string');
       }
-      const safeEmailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      const safeEmailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
       if (!safeEmailRegex.test(data.email)) {
         throw new BadRequestError('Invalid email format');
       }

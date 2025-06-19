@@ -1,5 +1,6 @@
+/* eslint-disable complexity */
 import { NextFunction, Request } from 'express';
-import { ClientSession, Model, Schema, Types } from 'mongoose';
+import { ClientSession, Schema, Types } from 'mongoose';
 
 import { TRACKED_FIELDS, isModelTracked } from '../constant/changeLog';
 import { ChangeLog } from '../models/changeLog.model';
@@ -120,7 +121,7 @@ const detectChanges = (
 // Create metadata object from request
 const createMetadata = (options: LogChangeOptions): ChangeLogMetadata => ({
   ip: options.ipAddress || options.req?.ip,
-  userAgent: options.userAgent || options.req?.headers['user-agent'],
+  userAgent: options.userAgent || options.req.headers['user-agent'],
 });
 
 // Log changes to the database
@@ -171,14 +172,17 @@ const logChange = async (
 
 // Set up post-save hook for a model
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const setUpPostSaveHook = (model: Model<any>): void => {
+export const setUpPostSaveHook = (modelSchema: Schema): void => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  model.schema.post('save', async function (this: any, next: NextFunction) {
+  modelSchema.post('save', async function (this: any, next: NextFunction) {
     try {
-      const { $session: session, $req: req, isNew, $oldDoc: oldDoc } = this;
+      const session = this?.$locals?.session;
+      const req = this?.$locals?.req;
+      const oldDoc = this?.$locals?.oldDoc;
+      const isNew = this?.$locals?.isNew;
 
       const ipAddress = req?.ip;
-      const userAgent = req?.headers['user-agent'];
+      const userAgent = req?.headers?.['user-agent'];
 
       // Skip oldDoc retrieval for CREATE operations
       const originalDoc = isNew ? null : oldDoc;
@@ -196,10 +200,9 @@ const setUpPostSaveHook = (model: Model<any>): void => {
   });
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const setUpPostUpdateHook = (model: Model<any>): void => {
+export const setUpPostUpdateHook = (modelSchema: Schema): void => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  model.schema.post('updateOne', async function (this: any, result: any, next: NextFunction) {
+  modelSchema.post('updateOne', async function (this: any, result: any, next: NextFunction) {
     try {
       const { req, session, oldDoc } = this.getOptions().context;
 
@@ -227,20 +230,13 @@ export const setUpPostUpdateHook = (model: Model<any>): void => {
   });
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const changeLogPlugin = (schema: Schema, options?: { model: Model<any> }): void => {
-  const model = options?.model;
-
-  if (!model) {
-    throw new Error('Model must be provided in plugin options');
-  }
-
-  setUpPostSaveHook(model);
-  setUpPostUpdateHook(model);
+export const initChangeLogMiddleware = (modelSchema: Schema): void => {
+  setUpPostSaveHook(modelSchema);
+  setUpPostUpdateHook(modelSchema);
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const initChangeLogMiddleware = (model: Model<any>): void => {
-  setUpPostSaveHook(model);
-  setUpPostUpdateHook(model);
-};
+export interface PluginMetaForSave {
+  $session?: ClientSession;
+  $req?: Request;
+  $oldDoc?: unknown;
+}

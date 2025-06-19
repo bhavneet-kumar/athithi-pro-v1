@@ -1,6 +1,6 @@
 import { Router } from 'express';
 
-import { OkSuccess } from '../shared/utils/customSuccess';
+import { OkSuccess } from '../shared/utils/customsuccessres';
 import '../types/express/index';
 
 import agencyRoutes from './agency/agency.routes';

@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 
-import { BadRequestError } from '../../shared/utils/customError';
-import { CreatedSuccess } from '../../shared/utils/customSuccess';
+import { BadRequestError } from '../../shared/utils/customerrors';
+import { CreatedSuccess } from '../../shared/utils/customsuccessres';
 
 import { authService } from './auth.service';
 

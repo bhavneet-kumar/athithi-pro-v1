@@ -6,7 +6,7 @@ import { Counter } from '../../shared/models/counter.model';
 import { ILead, Lead } from '../../shared/models/lead.model';
 import { BaseService } from '../../shared/services/base.service';
 import { aiScoreCalculator } from '../../shared/utils/aiScore';
-import { BadRequestError, CustomError, InternalServerError, NotFoundError } from '../../shared/utils/customError';
+import { BadRequestError, CustomError, InternalServerError, NotFoundError } from '../../shared/utils/customerrors';
 import { LEAD_NUMBER_PAD_LENGTH } from '../../types/enum/lead';
 
 import { ILeadCreate, ILeadFilter, ILeadUpdate } from './lead.interface';

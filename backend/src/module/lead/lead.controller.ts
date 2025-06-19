@@ -2,7 +2,7 @@ import { NextFunction, Request, Response } from 'express';
 import { Types } from 'mongoose';
 
 import { PAGINATION_DEFAULT_LIMIT, PAGINATION_DEFAULT_PAGE } from '../../shared/constant/validation';
-import { CreatedSuccess, NoContentSuccess, OkSuccess } from '../../shared/utils/customSuccess';
+import { CreatedSuccess, NoContentSuccess, OkSuccess } from '../../shared/utils/customsuccessres';
 
 import { ILeadFilter } from './lead.interface';
 import { leadService } from './lead.service';

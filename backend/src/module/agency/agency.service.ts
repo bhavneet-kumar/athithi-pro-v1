@@ -6,7 +6,7 @@ import {
   BusinessError,
   InternalServerError,
   CustomError,
-} from '../../shared/utils/customError';
+} from '../../shared/utils/customerrors';
 
 import { AgencyFilters, AgencySortOptions, IAgency } from './agency.interface';
 import { CreateAgencyInput, UpdateAgencyInput } from './agency.validator';

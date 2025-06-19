@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 
-import CustomSuccess from '../utils/customSuccess';
+import CustomSuccess from '../utils/customsuccessres';
 
 export const successResponseMiddleware = (req: Request, res: Response, next: NextFunction): void => {
   res.customSuccess = function (customSuccess: CustomSuccess): Response {

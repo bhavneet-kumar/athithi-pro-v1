@@ -1,7 +1,7 @@
 import 'express';
 import { UserRole } from 'types/enum/user';
 
-import type CustomSuccess from '../../shared/utils/customSuccess';
+import type CustomSuccess from '../../shared/utils/customsuccessres';
 
 declare module 'express-serve-static-core' {
   interface Response {

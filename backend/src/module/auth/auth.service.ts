@@ -19,7 +19,7 @@ import {
   BusinessError,
   InternalServerError,
   CustomError,
-} from '../../shared/utils/customError';
+} from '../../shared/utils/customerrors';
 
 import { ILoginInput, IRegisterInput, IPasswordResetInput, IRefreshTokenInput, ILoginResponse } from './auth.interface';
 

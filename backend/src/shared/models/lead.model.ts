@@ -160,6 +160,7 @@ const leadSchema = new Schema<ILead>(
       budget: {
         min: Number,
         max: Number,
+        value: Number,
         currency: String,
       },
       packageType: String,

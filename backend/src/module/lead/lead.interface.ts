@@ -66,6 +66,7 @@ export interface ILeadDetailResponse extends ILeadResponse {
     budget: {
       min: number;
       max: number;
+      value: number;
       currency: string;
     };
     packageType: string;

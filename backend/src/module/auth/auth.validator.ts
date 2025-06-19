@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { PASSWORD_MIN_LENGTH, PASSWORD_MAX_LENGTH } from '../../shared/constant/validation';
+import { createAgencySchema } from '../agency/agency.validator'; // ✅ correct path adjust karo
 
 // Magic numbers for validation
 const EMAIL_MAX_LENGTH = 255;
@@ -42,7 +43,7 @@ export const registerSchema = z.object({
   firstName: nameSchema,
   lastName: nameSchema,
   role: objectIdSchema,
-  agency: objectIdSchema.optional(),
+  agency: z.union([objectIdSchema, createAgencySchema]),
 });
 
 // Login schema

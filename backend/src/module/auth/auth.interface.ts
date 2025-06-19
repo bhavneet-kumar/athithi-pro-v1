@@ -1,3 +1,5 @@
+import { IAgency } from '../agency/agency.interface';
+
 export interface IAuthTokens {
   token: string;
   refreshToken: string;
@@ -23,6 +25,7 @@ export interface IRegisterInput {
   firstName: string;
   lastName: string;
   role: string;
+  agency: string | IAgency;
 }
 
 export interface IPasswordResetInput {
@@ -32,3 +35,4 @@ export interface IPasswordResetInput {
 export interface IRefreshTokenInput {
   refreshToken: string;
 }
+// .

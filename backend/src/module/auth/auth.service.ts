@@ -26,7 +26,7 @@ import {
 } from '../../shared/utils/CustomError';
 
 import { IAgency } from '../agency/agency.interface';
-import { Types } from 'mongoose';
+import { Types, isValidObjectId } from 'mongoose';
 import { ILoginInput, IRegisterInput, IPasswordResetInput, IRefreshTokenInput, ILoginResponse } from './auth.interface';
 import { agencyService } from '../agency/agency.service';
 import { createAgencySchema } from '../agency/agency.validator';
@@ -54,6 +54,10 @@ export class AuthService extends BaseService<IUser> {
 
   async register(data: IRegisterInput): Promise<{ user: IUser, token: string, metaInfo: ILoginMetadata }> {
     try {
+
+      if (!isValidObjectId(data.role)) {
+        throw new BadRequestError('Invalid role ID format');
+      }
       // 1) Validate role
       const roleExists = await Role.findById(data.role);
       if (!roleExists) throw new BadRequestError('Invalid role provided');
@@ -70,8 +74,7 @@ export class AuthService extends BaseService<IUser> {
         agencyId = agency._id as Types.ObjectId;;
 
       } else if (data.agency) {
-
-        if (typeof data.agency !== 'string') {
+        if (!isValidObjectId(data.agency)) {
           throw new BadRequestError('Invalid agency ID format');
         }
 
@@ -87,6 +90,16 @@ export class AuthService extends BaseService<IUser> {
         throw new BadRequestError('Agency is required');
 
       }
+
+      // 3) Validate email
+      if (typeof data.email !== 'string') {
+        throw new BadRequestError('Email must be a string');
+      }
+      const safeEmailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!safeEmailRegex.test(data.email)) {
+        throw new BadRequestError('Invalid email format');
+      }
+
       // 3) Prevent duplicate user in same agency
       const dup = await User.findOne({ email: { $eq: data.email } });
 

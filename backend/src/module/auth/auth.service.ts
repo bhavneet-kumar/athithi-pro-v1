@@ -1,4 +1,6 @@
 import jwt, { SignOptions, Secret } from 'jsonwebtoken';
+import mongoose, { Types, isValidObjectId } from 'mongoose';
+import { ZodError } from 'zod';
 
 import { config } from '../../shared/config/index';
 import {
@@ -8,6 +10,8 @@ import {
   TWENTY_FOUR_HOURS_IN_MILLISECONDS,
 } from '../../shared/constant/timeValues';
 import { MAX_LOGIN_ATTEMPTS } from '../../shared/constant/validation';
+import { Agency } from '../../shared/models/agency.model';
+import { ILoginMetadata, LoginMetadata } from '../../shared/models/loginMetadata.model';
 import { Role } from '../../shared/models/role.model';
 import { User, IUser } from '../../shared/models/user.model';
 import { BaseService } from '../../shared/services/base.service';
@@ -19,7 +23,11 @@ import {
   BusinessError,
   InternalServerError,
   CustomError,
+  NotFoundError,
 } from '../../shared/utils/customError';
+import { IAgency } from '../agency/agency.interface';
+import { agencyService } from '../agency/agency.service';
+import { createAgencySchema } from '../agency/agency.validator';
 
 import { ILoginInput, IRegisterInput, IPasswordResetInput, IRefreshTokenInput, ILoginResponse } from './auth.interface';
 
@@ -44,36 +52,34 @@ export class AuthService extends BaseService<IUser> {
     super(User, 'User');
   }
 
-  async register(data: IRegisterInput): Promise<void> {
+  async register(data: IRegisterInput): Promise<{ user: IUser; token: string; metaInfo: ILoginMetadata }> {
     try {
-      // Validate role exists
-      const roleExists = await Role.findById(data.role);
-      if (!roleExists) {
+      if (!isValidObjectId(data.role) && !mongoose.Types.ObjectId.isValid(data.role)) {
+        throw new BadRequestError('Invalid role ID format');
+      }
+      const role = await Role.findOne({ _id: { $eq: data.role } });
+      if (!role) {
         throw new BadRequestError('Invalid role provided');
       }
-
-      // Check if user already exists
-      const existingUser = await this.findOne({ email: data.email });
-      if (existingUser) {
-        throw new BusinessError('User with this email already exists');
+      const agencyId = await this.resolveAgency(data.agency as IAgency);
+      const dup = await User.findOne({ email: { $eq: data.email } });
+      if (dup) {
+        throw new BusinessError(`User already exists in this agency`);
       }
-
-      // Create new user - use User model directly to avoid type conflicts
       const user = new User({
-        ...data,
-        role: roleExists._id,
+        email: data.email,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        role: role._id,
+        agency: agencyId,
       });
-      await user.save();
+      const { token, metaInfo } = await this.createAndSendVerification(user, data.password);
 
-      // Generate email verification token
-      await user.generateEmailVerificationToken();
-
-      // Send verification email
-      if (!user.emailVerificationToken) {
-        throw new InternalServerError('Failed to generate email verification token');
-      }
-      await emailService.sendVerificationEmail(user.email, user.emailVerificationToken);
+      return { user, token, metaInfo };
     } catch (error) {
+      if (error instanceof ZodError) {
+        throw new BadRequestError(`Invalid agency data: ${error.errors.map((e) => e.message).join(', ')}`);
+      }
       if (error instanceof CustomError) {
         throw error;
       }
@@ -81,25 +87,59 @@ export class AuthService extends BaseService<IUser> {
     }
   }
 
-  async verifyEmail(token: string): Promise<void> {
-    try {
-      if (!token) {
-        throw new BadRequestError('Verification token is required');
+  private async resolveAgency(agency: IAgency): Promise<Types.ObjectId | string> {
+    if (agency && typeof agency === 'object') {
+      const validatedAgency = createAgencySchema.parse(agency);
+      const createdAgency = await agencyService.createAgency(validatedAgency);
+      return createdAgency._id as Types.ObjectId;
+    } else if (agency) {
+      if (!isValidObjectId(agency)) {
+        throw new BadRequestError('Invalid agency ID format');
+      }
+      const existingAgency = await Agency.findOne({ _id: { $eq: agency } });
+      if (!existingAgency) {
+        throw new BadRequestError('Invalid agency provided');
       }
 
-      const user = await this.findOne({
+      return existingAgency._id as Types.ObjectId;
+    }
+    throw new BadRequestError('Agency is required');
+  }
+
+  private async createAndSendVerification(
+    user: IUser,
+    password: string,
+  ): Promise<{ metadata: ILoginMetadata; token: string; metaInfo: ILoginMetadata }> {
+    try {
+      const metadata = new LoginMetadata({ userId: user._id, password });
+      await metadata.generateEmailVerificationToken();
+      const token = metadata.emailVerificationToken;
+      const metaInfo = await metadata.save();
+      await emailService.sendVerificationEmail(user.email, token);
+      return { metadata, token, metaInfo };
+    } catch (error) {
+      if (error instanceof CustomError) {
+        throw error;
+      }
+      throw new InternalServerError(`Email verification failed: ${error.message}`);
+    }
+  }
+
+  async verifyEmail(token: string): Promise<void> {
+    try {
+      const metadata = await LoginMetadata.findOne({
         emailVerificationToken: token,
         emailVerificationExpires: { $gt: Date.now() },
       });
 
-      if (!user) {
+      if (!metadata) {
         throw new BadRequestError('Invalid or expired verification token');
       }
 
-      user.isEmailVerified = true;
-      user.emailVerificationToken = null;
-      user.emailVerificationExpires = null;
-      await user.save();
+      metadata.isEmailVerified = true;
+      metadata.emailVerificationToken = null;
+      metadata.emailVerificationExpires = null;
+      await metadata.save();
     } catch (error) {
       if (error instanceof CustomError) {
         throw error;
@@ -110,40 +150,29 @@ export class AuthService extends BaseService<IUser> {
 
   async login(data: ILoginInput): Promise<ILoginResponse> {
     try {
-      // Find user by email
       const user = await this.findOne({ email: data.email });
       if (!user) {
         throw new UnauthorizedError('Invalid credentials');
       }
 
-      // Check if account is locked
-      if (user.accountLockedUntil && user.accountLockedUntil > new Date()) {
-        const lockTimeRemaining = Math.ceil((user.accountLockedUntil.getTime() - Date.now()) / MINUTES_IN_MILLISECONDS);
-        throw new ForbiddenError(`Account is locked. Please try again in ${lockTimeRemaining} minutes.`);
-      }
-
-      // Verify password
-      const isMatch = await user.comparePassword(data.password);
-      if (!isMatch) {
-        await this.handleFailedLogin(user);
+      console.log(user, '++++++++++++++');
+      const metadata = await LoginMetadata.findOne({ userId: user._id });
+      if (!metadata) {
         throw new UnauthorizedError('Invalid credentials');
       }
 
-      // Reset failed login attempts on successful login
-      await this.resetFailedLoginAttempts(user);
+      console.log(metadata, '++++++++++++++');
+      this.checkAccountLockStatus(metadata, user);
 
-      // Generate tokens
+      console.log(user, 'here', '++++++++++++++');
+      await this.verifyUserPassword(user, data.password, metadata);
+
+      console.log(metadata, '++++++++++++++');
+      await this.resetFailedLoginAttempts(metadata);
+
       const tokens = this.generateTokens(user.id.toString());
 
-      return {
-        ...tokens,
-        user: {
-          id: user.id.toString(),
-          email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
-        },
-      };
+      return this.buildLoginResponse(tokens, user);
     } catch (error) {
       if (error instanceof CustomError) {
         throw error;
@@ -152,34 +181,101 @@ export class AuthService extends BaseService<IUser> {
     }
   }
 
-  async forgotPassword(email: string): Promise<void> {
-    const user = await User.findOne({ email });
-    if (!user) {
-      throw new Error('User not found');
+  /**
+   * Checks if the account is locked based on metadata or user fields.
+   * Throws ForbiddenError if locked.
+   * @param metadata The login metadata object to check the account lock status for
+   * @param user The user object to check the account lock status for
+   * @throws ForbiddenError if the account is locked
+   */
+  private checkAccountLockStatus(metadata: ILoginMetadata, user: IUser): void {
+    if (metadata.accountLockedUntil && metadata.accountLockedUntil > new Date()) {
+      const lockMins = Math.ceil((metadata.accountLockedUntil.getTime() - Date.now()) / MINUTES_IN_MILLISECONDS);
+      throw new ForbiddenError(`Account is locked. Try again in ${lockMins} minutes.`);
     }
 
-    await user.generatePasswordResetToken();
-    if (!user.passwordResetToken) {
-      throw new InternalServerError('Failed to generate password reset token');
+    if (user.accountLockedUntil && user.accountLockedUntil > new Date()) {
+      const lockTimeRemaining = Math.ceil((user.accountLockedUntil.getTime() - Date.now()) / MINUTES_IN_MILLISECONDS);
+      throw new ForbiddenError(`Account is locked. Please try again in ${lockTimeRemaining} minutes.`);
     }
-    await emailService.sendPasswordResetEmail(user.email, user.passwordResetToken);
+  }
+
+  /**
+   * Verifies the user's password. Handles failed login attempts.
+   * Throws UnauthorizedError if password is invalid.
+   * @param user The user object to verify the password for
+   * @param password The password to verify
+   * @param metadata The login metadata object to handle the failed login attempts for
+   * @throws UnauthorizedError if the password is invalid
+   */
+  private async verifyUserPassword(user: IUser, password: string, metadata: ILoginMetadata): Promise<void> {
+    const isMatch = await metadata.comparePassword(password);
+    if (!isMatch) {
+      await this.handleFailedLogin(metadata);
+      throw new UnauthorizedError('Invalid credentials');
+    }
+  }
+
+  /**
+   * Builds the login response object.
+   * @param tokens The tokens to build the login response object for
+   * @param tokens.token The token to build the login response object for
+   * @param tokens.refreshToken The refresh token to build the login response object for
+   * @param user The user object to build the login response object for
+   * @returns The login response object
+   */
+  private buildLoginResponse(tokens: { token: string; refreshToken: string }, user: IUser): ILoginResponse {
+    return {
+      ...tokens,
+      user: {
+        id: user.id.toString(),
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+      },
+    };
+  }
+
+  async forgotPassword(email: string): Promise<void> {
+    try {
+      const user = await User.findOne({ email: { $eq: email } });
+      if (!user) {
+        throw new NotFoundError('User not found');
+      }
+
+      const metadata = await LoginMetadata.findOne({ userId: user._id });
+      if (!metadata) {
+        throw new NotFoundError('Login metadata not found');
+      }
+
+      await metadata.generatePasswordResetToken();
+      if (!metadata.passwordResetToken) {
+        throw new InternalServerError('Failed to generate password reset token');
+      }
+      await emailService.sendPasswordResetEmail(user.email, metadata.passwordResetToken);
+    } catch (error) {
+      if (error instanceof CustomError) {
+        throw error;
+      }
+      throw new InternalServerError(`Forgot Password failed: ${error.message}`);
+    }
   }
 
   async resetPassword(token: string, data: IPasswordResetInput): Promise<void> {
     try {
-      const user = await User.findOne({
+      const metadata = await LoginMetadata.findOne({
         passwordResetToken: token,
         passwordResetExpires: { $gt: Date.now() },
       });
 
-      if (!user) {
-        throw new Error('Invalid or expired reset token');
+      if (!metadata) {
+        throw new BadRequestError('Invalid or expired reset token');
       }
 
-      user.password = data.password;
-      user.passwordResetToken = null;
-      user.passwordResetExpires = null;
-      await user.save();
+      metadata.password = data.password;
+      metadata.passwordResetToken = null;
+      metadata.passwordResetExpires = null;
+      await metadata.save();
     } catch (error) {
       if (error instanceof CustomError) {
         throw error;
@@ -192,13 +288,11 @@ export class AuthService extends BaseService<IUser> {
     try {
       const decoded = jwt.verify(data.refreshToken, config.jwt.refreshSecret) as { id: string };
       const user = await this.findById(decoded.id);
-
       if (!user) {
         throw new ForbiddenError('Invalid refresh token');
       }
 
       const token = jwt.sign({ id: user._id }, config.jwt.secret as Secret, this.tokenOptions);
-
       return { token };
     } catch (error) {
       if (error instanceof CustomError) {
@@ -210,18 +304,18 @@ export class AuthService extends BaseService<IUser> {
 
   /**
    * Handle failed login attempts with account locking logic
-   * @param user The user object whose failed login attempts should be incremented and possibly locked
+   * @param metadata The login metadata object to handle the failed login attempts for
    */
-  private async handleFailedLogin(user: IUser): Promise<void> {
+  private async handleFailedLogin(metadata: ILoginMetadata): Promise<void> {
     try {
-      user.failedLoginAttempts += 1;
-      user.lastFailedLogin = new Date();
+      metadata.failedLoginAttempts += 1;
+      metadata.lastFailedLogin = new Date();
 
-      if (user.failedLoginAttempts >= this.MAX_LOGIN_ATTEMPTS) {
-        user.accountLockedUntil = new Date(Date.now() + this.ACCOUNT_LOCK_TIME);
+      if (metadata.failedLoginAttempts >= this.MAX_LOGIN_ATTEMPTS) {
+        metadata.accountLockedUntil = new Date(Date.now() + this.ACCOUNT_LOCK_TIME);
       }
 
-      await user.save();
+      await metadata.save();
     } catch (error) {
       if (error instanceof CustomError) {
         throw error;
@@ -232,13 +326,13 @@ export class AuthService extends BaseService<IUser> {
 
   /**
    * Reset failed login attempts after successful login
-   * @param user The user object whose failed login attempts should be reset
+   * @param metadata The login metadata object to reset the failed login attempts for
    */
-  private async resetFailedLoginAttempts(user: IUser): Promise<void> {
+  private async resetFailedLoginAttempts(metadata: ILoginMetadata): Promise<void> {
     try {
-      user.failedLoginAttempts = 0;
-      user.accountLockedUntil = null;
-      await user.save();
+      metadata.failedLoginAttempts = 0;
+      metadata.accountLockedUntil = null;
+      await metadata.save();
     } catch (error) {
       if (error instanceof CustomError) {
         throw error;

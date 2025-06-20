@@ -99,7 +99,7 @@ export const leadValidator = {
       priority: z.string().optional(),
       assignedTo: objectIdSchema.optional(),
       travelDetails: travelDetailsSchema,
-      aiScore: aiScoreSchema,
+      aiScore: aiScoreSchema.optional(),
       engagement: engagementSchema,
       tags: z.array(z.string()).optional(),
       notes: z.string().optional(),
@@ -117,7 +117,7 @@ export const leadValidator = {
           version: z.number(),
           isDeleted: z.boolean(),
         })
-        .strict(),
+        .optional(),
     })
     .strict(),
 

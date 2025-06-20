@@ -28,6 +28,11 @@ export class LeadService extends BaseService<ILead> {
     const session = await mongoose.startSession();
     session.startTransaction();
     try {
+      // Ensure aiScore object exists
+      if (!data.aiScore) {
+        data.aiScore = { value: 0, lastCalculated: new Date() };
+      }
+
       data.aiScore.value = Number(aiScoreCalculator.calculateScore(data as ILead));
 
       // Generate lead number if not set

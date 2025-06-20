@@ -1,14 +1,14 @@
+// src/module/auth/auth.controller.ts
+
 import { Request, Response, NextFunction } from 'express';
 
 import { BadRequestError } from '../../shared/utils/customError';
-import { CreatedSuccess } from '../../shared/utils/customSuccess';
+import { CreatedSuccess, OkSuccess, NoContentSuccess } from '../../shared/utils/customSuccess';
 
 import { authService } from './auth.service';
 
-/**
- * Authentication Controller Class
- * Implements controller layer with proper error handling and response formatting
- */
+// Optional: extend Request to include user
+
 export class AuthController {
   /**
    * Register a new user
@@ -19,8 +19,13 @@ export class AuthController {
    */
   async register(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      await authService.register(req.body);
-      res.customSuccess(new CreatedSuccess('User created successfully. Please check your email for verification.'));
+      if (!req.body || !req.body?.email || !req.body?.password) {
+        throw new BadRequestError('Email and password are required');
+      }
+      const user = await authService.register(req?.body);
+      res.customSuccess(
+        new CreatedSuccess(user, 'User created successfully. Please check your email for verification.'),
+      );
     } catch (error) {
       next(error);
     }
@@ -35,16 +40,11 @@ export class AuthController {
   async verifyEmail(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { token } = req.params;
-
       if (!token) {
         throw new BadRequestError('Verification token is required');
       }
-
       await authService.verifyEmail(token);
-      res.json({
-        success: true,
-        message: 'Email verified successfully',
-      });
+      res.customSuccess(new OkSuccess(null, 'Email verified successfully'));
     } catch (error) {
       next(error);
     }
@@ -59,11 +59,12 @@ export class AuthController {
    */
   async login(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
+      const { email, password } = req.body;
+      if (!email || !password) {
+        throw new BadRequestError('Email and password are required');
+      }
       const result = await authService.login(req.body);
-      res.json({
-        success: true,
-        data: result,
-      });
+      res.customSuccess(new OkSuccess(result, 'Login successful'));
     } catch (error) {
       next(error);
     }
@@ -78,11 +79,11 @@ export class AuthController {
   async forgotPassword(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { email } = req.body;
+      if (!email) {
+        throw new BadRequestError('Email is required');
+      }
       await authService.forgotPassword(email);
-      res.json({
-        success: true,
-        message: 'Password reset email sent',
-      });
+      res.customSuccess(new OkSuccess(null, 'Password reset email sent'));
     } catch (error) {
       next(error);
     }
@@ -97,16 +98,11 @@ export class AuthController {
   async resetPassword(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { token } = req.params;
-
       if (!token) {
         throw new BadRequestError('Reset token is required');
       }
-
       await authService.resetPassword(token, req.body);
-      res.json({
-        success: true,
-        message: 'Password reset successful',
-      });
+      res.customSuccess(new OkSuccess(null, 'Password reset successful'));
     } catch (error) {
       next(error);
     }
@@ -120,11 +116,14 @@ export class AuthController {
    */
   async refreshToken(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
+      const { refreshToken } = req.body;
+      if (!refreshToken) {
+        throw new BadRequestError('Refresh token is required');
+      }
+
       const result = await authService.refreshToken(req.body);
-      res.json({
-        success: true,
-        data: result,
-      });
+
+      res.customSuccess(new OkSuccess(result, 'Token refreshed successfully'));
     } catch (error) {
       next(error);
     }
@@ -146,20 +145,17 @@ export class AuthController {
       }
 
       const user = await authService.findById(userId, ['role', 'agency']);
-
-      res.json({
-        success: true,
-        data: {
-          id: user.id,
-          email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          role: user.role,
-          agency: user.agency,
-          isEmailVerified: user.isEmailVerified,
-          isActive: user.isActive,
-        },
-      });
+      const profile = {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+        agency: user.agency,
+        isEmailVerified: user.isEmailVerified,
+        isActive: user.isActive,
+      };
+      res.customSuccess(new OkSuccess(profile, 'Profile fetched successfully'));
     } catch (error) {
       next(error);
     }
@@ -173,12 +169,7 @@ export class AuthController {
    */
   async logout(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      // In a real implementation, you might want to blacklist the token
-      // For now, we'll just return a success message
-      res.json({
-        success: true,
-        message: 'Logged out successfully',
-      });
+      res.customSuccess(new NoContentSuccess('Logged out successfully'));
     } catch (error) {
       next(error);
     }

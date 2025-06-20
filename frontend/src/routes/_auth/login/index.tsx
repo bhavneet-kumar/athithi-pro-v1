@@ -215,7 +215,7 @@ export const LoginScreen = ({
       </div>
       <div className='bg-muted relative hidden lg:block'>
         <img
-          src='/Modern-Medical-Office.png'
+          src='/Travel.jpeg'
           alt='Image'
           className='absolute rounded-3xl inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale'
         />

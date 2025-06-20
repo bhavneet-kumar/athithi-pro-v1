@@ -32,6 +32,19 @@ export interface LeadUpdateRequest extends Partial<LeadAddRequest> {
   id: string;
 }
 
+export interface LeadPaginationParams {
+  status?: string;
+  page?: number;
+  limit?: number;
+  skip?: number;
+  search?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  pageNumber?: number;
+  pageSize?: number;
+  offset?: number;
+}
+
 export interface LeadResponse {
   success: boolean;
   code: number;
@@ -50,6 +63,9 @@ export interface LeadApiResponse {
   data: {
     data: Lead[];
     total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
   };
   timestamp: string;
   path: string;
@@ -91,13 +107,41 @@ export const leadApi = apiSlice.injectEndpoints({
       }
     ),
 
-    // Get all leads
-    leadGetAll: builder.query<LeadApiResponse, void>({
-      query: () => ({
-        url: 'lead',
-        method: 'GET',
-        credentials: 'include',
-      }),
+    // Get all leads with pagination - TEST VERSION
+    leadGetAll: builder.query<LeadApiResponse, LeadPaginationParams>({
+      query: params => {
+        // Simplified approach - try minimal parameters first
+        const searchParams = new URLSearchParams();
+
+        // Only add essential parameters
+        if (params.status) {
+          searchParams.append('status', params.status.toUpperCase());
+        }
+
+        // Try with explicit number conversion and validation
+        const page = Number(params.page);
+        const limit = Number(params.limit);
+
+        if (!isNaN(page) && page > 0) {
+          searchParams.append('page', page.toString());
+        }
+        if (!isNaN(limit) && limit > 0) {
+          searchParams.append('limit', limit.toString());
+        }
+
+        if (params.search && params.search.trim()) {
+          searchParams.append('search', params.search.trim());
+        }
+
+        const queryString = searchParams.toString();
+        const url = `lead${queryString ? `?${queryString}` : ''}`;
+
+        return {
+          url,
+          method: 'GET',
+          credentials: 'include',
+        };
+      },
       providesTags: ['Leads'],
     }),
 

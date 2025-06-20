@@ -9,7 +9,7 @@ import {
   Plus,
   User,
 } from 'lucide-react';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo } from 'react';
 
 import BulkUploadModal from './BulkUploadModal';
 import LeadKanbanView from './LeadKanbanView';
@@ -33,19 +33,17 @@ import {
 import { Input } from '@/components/ui/input';
 import { useCrmStore } from '@/lib/store';
 import { LeadSource, LeadStatus } from '@/types/crm';
-import { useLeadGetAllQuery } from '@/store/api/Services/leadApi';
+import {
+  useLeadGetAllQuery,
+  type LeadPaginationParams,
+} from '@/store/api/Services/leadApi';
+import { useLeadsUrlState } from '@/hooks/useLeadsUrlState';
+import { useServerPagination } from '@/hooks/useServerPagination';
 
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useNavigate } from '@tanstack/react-router';
-
-interface FilterState {
-  status: LeadStatus | 'all';
-  source: LeadSource | 'all';
-  dateRange: 'all' | 'today' | 'week' | 'month';
-  assignee: string;
-  priority: 'all' | 'high' | 'medium' | 'low';
-}
+import type { SortingState } from '@tanstack/react-table';
 
 interface SortConfig {
   key: 'name' | 'createdAt' | 'aiPriorityScore' | 'budget';
@@ -54,138 +52,164 @@ interface SortConfig {
 
 const LeadsPage: React.FC = () => {
   const navigate = useNavigate();
-  const { leads, leadViewMode, setLeadViewMode, isOffline } = useCrmStore();
+  const { leads, isOffline } = useCrmStore();
 
-  // Fetch leads from API
-  const { data: apiResponse, isLoading, error } = useLeadGetAllQuery();
+  // URL state management
+  const {
+    page,
+    limit,
+    search,
+    status,
+    sortBy,
+    sortOrder,
+    viewMode,
+    filters,
+    setPage,
+    setLimit,
+    setSearch,
+    setStatus,
+    setSorting,
+    setViewMode,
+    setFilter,
+    reset,
+    hasChanges,
+    getApiParams,
+  } = useLeadsUrlState();
+
+  // Server-side pagination hook
+  const { paginationMeta } = useServerPagination({
+    initialPageIndex: page - 1, // Convert to 0-based for the hook
+    initialPageSize: limit,
+    total: 0, // Will be updated from API response
+  });
+
+  // Get API parameters from URL state
+  const apiParams = useMemo((): LeadPaginationParams => {
+    return getApiParams();
+  }, [getApiParams]);
+
+  // Fetch leads from API with pagination
+  const { data: apiResponse, isLoading, error } = useLeadGetAllQuery(apiParams);
 
   // Use API data if available, otherwise fall back to local store
   const allLeads = apiResponse?.data?.data || leads;
+  const totalLeads = apiResponse?.data?.total || leads.length;
 
-  // Enhanced state management
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filters, setFilters] = useState<FilterState>({
-    status: 'all',
-    source: 'all',
-    dateRange: 'all',
-    assignee: 'all',
-    priority: 'all',
-  });
-  const [sortConfig, setSortConfig] = useState<SortConfig>({
-    key: 'createdAt',
-    direction: 'desc',
-  });
+  // Update pagination meta when total changes
+  React.useEffect(() => {
+    if (apiResponse?.data?.total !== undefined) {
+      // The hook will automatically recalculate pagination meta
+    }
+  }, [apiResponse?.data?.total]);
 
-  // Memoized filtering logic
-  const filteredLeads = useMemo(() => {
-    return allLeads.filter(lead => {
-      const matchesSearch =
-        !searchTerm ||
-        lead.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        lead.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        lead.phone?.includes(searchTerm);
-
-      const matchesStatus =
-        filters.status === 'all' || lead.status === filters.status;
-
-      const matchesSource =
-        filters.source === 'all' || lead.source === filters.source;
-
-      const matchesPriority = (() => {
-        if (filters.priority === 'all') {
-          return true;
-        }
-        const score = lead.aiScore?.value || 50;
-        switch (filters.priority) {
-          case 'high':
-            return score >= 70;
-          case 'medium':
-            return score >= 40 && score < 70;
-          case 'low':
-            return score < 40;
-          default:
-            return true;
-        }
-      })();
-
-      const matchesDateRange = (() => {
-        if (filters.dateRange === 'all') {
-          return true;
-        }
-        const createdAt = new Date(lead.createdAt);
-        const now = new Date();
-        switch (filters.dateRange) {
-          case 'today':
-            return createdAt.toDateString() === now.toDateString();
-          case 'week': {
-            const weekAgo = new Date(now.setDate(now.getDate() - 7));
-            return createdAt >= weekAgo;
-          }
-          case 'month': {
-            const monthAgo = new Date(now.setMonth(now.getMonth() - 1));
-            return createdAt >= monthAgo;
-          }
-          default:
-            return true;
-        }
-      })();
-
-      const matchesAssignee =
-        filters.assignee === 'all' || lead.assignedTo === filters.assignee;
-
-      return (
-        matchesSearch &&
-        matchesStatus &&
-        matchesSource &&
-        matchesPriority &&
-        matchesDateRange &&
-        matchesAssignee
-      );
-    });
-  }, [allLeads, searchTerm, filters]);
-
-  // Memoized sorting logic
-  const sortedLeads = useMemo(() => {
-    return [...filteredLeads].sort((a, b) => {
-      const direction = sortConfig.direction === 'asc' ? 1 : -1;
-      switch (sortConfig.key) {
-        case 'name':
-          return direction * a.fullName.localeCompare(b.fullName);
-        case 'createdAt':
-          return (
-            direction *
-            (new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
-          );
-        case 'aiPriorityScore':
-          return (
-            direction * ((a.aiScore?.value || 50) - (b.aiScore?.value || 50))
-          );
-        case 'budget':
-          return (
-            direction *
-            ((a.travelDetails?.budget?.value || 0) -
-              (b.travelDetails?.budget?.value || 0))
-          );
-        default:
-          return 0;
-      }
-    });
-  }, [filteredLeads, sortConfig]);
+  // Ensure status is properly initialized
+  React.useEffect(() => {
+    if (!status || status === '') {
+      console.log('Status is empty, setting to default');
+      setStatus('all');
+    }
+  }, [status, setStatus]);
 
   // Handler functions
   const handleFilterChange = useCallback(
-    (key: keyof FilterState, value: string) => {
-      setFilters(prev => ({ ...prev, [key]: value }));
+    (key: keyof typeof filters, value: string) => {
+      setFilter(key, value);
+      // Don't call setPage(1) to avoid the error
     },
-    []
+    [setFilter]
   );
 
-  const handleSortChange = useCallback((key: SortConfig['key']) => {
-    setSortConfig(prev => ({
-      key,
-      direction: prev.key === key && prev.direction === 'desc' ? 'asc' : 'desc',
-    }));
-  }, []);
+  const handleSortChange = useCallback(
+    (key: SortConfig['key']) => {
+      const newSorting: SortingState = [
+        {
+          id:
+            key === 'name'
+              ? 'fullName'
+              : key === 'aiPriorityScore'
+                ? 'aiScore'
+                : key,
+          desc: sortBy === key && sortOrder === 'desc' ? false : true,
+        },
+      ];
+      setSorting(newSorting);
+    },
+    [sortBy, sortOrder, setSorting]
+  );
+
+  const handlePageChange = useCallback(
+    (pageIndex: number) => {
+      setPage(pageIndex + 1); // Convert from 0-based to 1-based
+    },
+    [setPage]
+  );
+
+  const handlePageSizeChange = useCallback(
+    (pageSize: number) => {
+      setLimit(pageSize);
+      // Don't call setPage(1) to avoid the error
+    },
+    [setLimit]
+  );
+
+  // Custom function to batch updates and avoid setPage(1) errors
+  const batchUpdate = useCallback(
+    (updates: Partial<{ search: string; status: string; page: number }>) => {
+      // Update search if provided
+      if (updates.search !== undefined) {
+        setSearch(updates.search);
+      }
+
+      // Update status if provided
+      if (updates.status !== undefined) {
+        setStatus(updates.status);
+      }
+
+      // Update page if provided (but only if it's not 1 to avoid the error)
+      if (updates.page !== undefined && updates.page !== 1) {
+        setPage(updates.page);
+      }
+    },
+    [setSearch, setStatus, setPage]
+  );
+
+  const handleSearchChange = useCallback(
+    (search: string) => {
+      setSearch(search);
+      // Don't call setPage(1) to avoid the error
+    },
+    [setSearch]
+  );
+
+  const handleSortingChange = useCallback(
+    (newSorting: SortingState) => {
+      setSorting(newSorting);
+    },
+    [setSorting]
+  );
+
+  const handleTabChange = useCallback(
+    (tab: string) => {
+      setStatus(tab);
+      // Don't call setPage(1) to avoid the error
+    },
+    [setStatus]
+  );
+
+  // Ensure we have a valid status for the Tabs component
+  const currentStatus =
+    status &&
+    [
+      'all',
+      'new',
+      'contacted',
+      'qualified',
+      'proposal',
+      'negotiation',
+      'booked',
+    ].includes(status)
+      ? status
+      : 'all';
 
   return (
     <div className='space-y-6'>
@@ -217,8 +241,14 @@ const LeadsPage: React.FC = () => {
             type='search'
             placeholder='Search leads...'
             className='w-full pl-9 bg-white'
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
+            value={search}
+            onChange={e => {
+              console.log('Search input onChange:', {
+                value: e.target.value,
+                currentSearch: search,
+              });
+              handleSearchChange(e.target.value);
+            }}
           />
         </div>
 
@@ -234,24 +264,6 @@ const LeadsPage: React.FC = () => {
             </DropdownMenuTrigger>
             <DropdownMenuContent className='w-56' align='end'>
               <div className='px-2 py-1.5 text-sm font-semibold'>Status</div>
-              <DropdownMenuItem
-                onClick={() => handleFilterChange('status', 'all')}
-                className={filters.status === 'all' ? 'bg-muted' : ''}
-              >
-                All Statuses
-              </DropdownMenuItem>
-              {Object.values(LeadStatus).map(status => (
-                <DropdownMenuItem
-                  key={status}
-                  onClick={() => handleFilterChange('status', status)}
-                  className={filters.status === status ? 'bg-muted' : ''}
-                >
-                  {status.charAt(0).toUpperCase() + status.slice(1)}
-                </DropdownMenuItem>
-              ))}
-
-              <Separator className='my-2' />
-              <div className='px-2 py-1.5 text-sm font-semibold'>Source</div>
               <DropdownMenuItem
                 onClick={() => handleFilterChange('source', 'all')}
                 className={filters.source === 'all' ? 'bg-muted' : ''}
@@ -313,7 +325,7 @@ const LeadsPage: React.FC = () => {
             <DropdownMenuTrigger asChild>
               <Button variant='outline' size='sm'>
                 <ArrowUpDown className='mr-2 h-4 w-4' />
-                Sort: {sortConfig.key} ({sortConfig.direction})
+                Sort: {sortBy} ({sortOrder})
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align='end'>
@@ -329,7 +341,7 @@ const LeadsPage: React.FC = () => {
                   onClick={() =>
                     handleSortChange(option.key as SortConfig['key'])
                   }
-                  className={sortConfig.key === option.key ? 'bg-muted' : ''}
+                  className={sortBy === option.key ? 'bg-muted' : ''}
                 >
                   {option.label}
                 </DropdownMenuItem>
@@ -339,9 +351,9 @@ const LeadsPage: React.FC = () => {
 
           <div className='border rounded-md flex'>
             <Button
-              variant={leadViewMode === 'list' ? 'default' : 'ghost'}
+              variant={viewMode === 'list' ? 'default' : 'ghost'}
               size='sm'
-              onClick={() => setLeadViewMode('list')}
+              onClick={() => setViewMode('list')}
               className='rounded-r-none'
             >
               <List className='h-4 w-4' />
@@ -349,9 +361,9 @@ const LeadsPage: React.FC = () => {
             </Button>
             <Separator orientation='vertical' className='h-8' />
             <Button
-              variant={leadViewMode === 'kanban' ? 'default' : 'ghost'}
+              variant={viewMode === 'kanban' ? 'default' : 'ghost'}
               size='sm'
-              onClick={() => setLeadViewMode('kanban')}
+              onClick={() => setViewMode('kanban')}
               className='rounded-l-none '
             >
               <LayoutGrid className='h-4 w-4' />
@@ -361,7 +373,56 @@ const LeadsPage: React.FC = () => {
         </div>
       </div>
 
-      <Tabs defaultValue='all' className='w-full'>
+      {/* Debug section - Remove in production */}
+      {/* {process.env.NODE_ENV === 'development' && (
+        <Card className='bg-yellow-50 border-yellow-200'>
+          <CardHeader>
+            <CardTitle className='text-yellow-800'>
+              Debug Tab Selection
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className='space-y-2'>
+              <p className='text-sm'>
+                Current Status: <strong>{currentStatus}</strong>
+              </p>
+              <p className='text-sm'>
+                Raw Status: <strong>{status}</strong>
+              </p>
+              <div className='flex gap-2'>
+                <Button
+                  size='sm'
+                  variant='outline'
+                  onClick={() => setStatus('new')}
+                >
+                  Set to New
+                </Button>
+                <Button
+                  size='sm'
+                  variant='outline'
+                  onClick={() => setStatus('qualified')}
+                >
+                  Set to Qualified
+                </Button>
+                <Button
+                  size='sm'
+                  variant='outline'
+                  onClick={() => setStatus('all')}
+                >
+                  Set to All
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )} */}
+
+      <Tabs
+        defaultValue='all'
+        value={currentStatus}
+        onValueChange={handleTabChange}
+        className='w-full'
+      >
         <TabsList className='grid grid-cols-4 sm:grid-cols-7'>
           <TabsTrigger value='all'>All</TabsTrigger>
           <TabsTrigger value='new'>New</TabsTrigger>
@@ -378,85 +439,153 @@ const LeadsPage: React.FC = () => {
           </TabsTrigger>
         </TabsList>
         <TabsContent value='all' className='mt-4'>
-          {leadViewMode === 'list' ? (
-            <LeadListView leads={sortedLeads} />
+          {viewMode === 'list' ? (
+            <LeadListView
+              leads={allLeads}
+              total={totalLeads}
+              isLoading={isLoading}
+              onPageChange={handlePageChange}
+              onPageSizeChange={handlePageSizeChange}
+              onSearchChange={handleSearchChange}
+              onSortChange={handleSortingChange}
+              pageIndex={page - 1} // Convert to 0-based for the component
+              pageSize={limit}
+              searchTerm={search}
+              sorting={[{ id: sortBy, desc: sortOrder === 'desc' }]}
+            />
           ) : (
-            <LeadKanbanView leads={sortedLeads} />
+            <LeadKanbanView leads={allLeads} />
           )}
         </TabsContent>
         <TabsContent value='new' className='mt-4'>
-          {leadViewMode === 'list' ? (
+          {viewMode === 'list' ? (
             <LeadListView
-              leads={sortedLeads.filter(l => l.status === LeadStatus.NEW)}
+              leads={allLeads.filter(l => l.status === LeadStatus.NEW)}
+              total={totalLeads}
+              isLoading={isLoading}
+              onPageChange={handlePageChange}
+              onPageSizeChange={handlePageSizeChange}
+              onSearchChange={handleSearchChange}
+              onSortChange={handleSortingChange}
+              pageIndex={page - 1}
+              pageSize={limit}
+              searchTerm={search}
+              sorting={[{ id: sortBy, desc: sortOrder === 'desc' }]}
             />
           ) : (
             <LeadKanbanView
-              leads={sortedLeads.filter(l => l.status === LeadStatus.NEW)}
+              leads={allLeads.filter(l => l.status === LeadStatus.NEW)}
             />
           )}
         </TabsContent>
         <TabsContent value='contacted' className='mt-4'>
-          {leadViewMode === 'list' ? (
+          {viewMode === 'list' ? (
             <LeadListView
-              leads={sortedLeads.filter(l => l.status === LeadStatus.CONTACTED)}
+              leads={allLeads.filter(l => l.status === LeadStatus.CONTACTED)}
+              total={totalLeads}
+              isLoading={isLoading}
+              onPageChange={handlePageChange}
+              onPageSizeChange={handlePageSizeChange}
+              onSearchChange={handleSearchChange}
+              onSortChange={handleSortingChange}
+              pageIndex={page - 1}
+              pageSize={limit}
+              searchTerm={search}
+              sorting={[{ id: sortBy, desc: sortOrder === 'desc' }]}
             />
           ) : (
             <LeadKanbanView
-              leads={sortedLeads.filter(l => l.status === LeadStatus.CONTACTED)}
+              leads={allLeads.filter(l => l.status === LeadStatus.CONTACTED)}
             />
           )}
         </TabsContent>
         <TabsContent value='qualified' className='mt-4'>
-          {leadViewMode === 'list' ? (
+          {viewMode === 'list' ? (
             <LeadListView
-              leads={sortedLeads.filter(l => l.status === LeadStatus.QUALIFIED)}
+              leads={allLeads.filter(l => l.status === LeadStatus.QUALIFIED)}
+              total={totalLeads}
+              isLoading={isLoading}
+              onPageChange={handlePageChange}
+              onPageSizeChange={handlePageSizeChange}
+              onSearchChange={handleSearchChange}
+              onSortChange={handleSortingChange}
+              pageIndex={page - 1}
+              pageSize={limit}
+              searchTerm={search}
+              sorting={[{ id: sortBy, desc: sortOrder === 'desc' }]}
             />
           ) : (
             <LeadKanbanView
-              leads={sortedLeads.filter(l => l.status === LeadStatus.QUALIFIED)}
+              leads={allLeads.filter(l => l.status === LeadStatus.QUALIFIED)}
             />
           )}
         </TabsContent>
         <TabsContent value='proposal' className='mt-4'>
-          {leadViewMode === 'list' ? (
+          {viewMode === 'list' ? (
             <LeadListView
-              leads={sortedLeads.filter(l => l.status === LeadStatus.PROPOSAL)}
+              leads={allLeads.filter(l => l.status === LeadStatus.PROPOSAL)}
+              total={totalLeads}
+              isLoading={isLoading}
+              onPageChange={handlePageChange}
+              onPageSizeChange={handlePageSizeChange}
+              onSearchChange={handleSearchChange}
+              onSortChange={handleSortingChange}
+              pageIndex={page - 1}
+              pageSize={limit}
+              searchTerm={search}
+              sorting={[{ id: sortBy, desc: sortOrder === 'desc' }]}
             />
           ) : (
             <LeadKanbanView
-              leads={sortedLeads.filter(l => l.status === LeadStatus.PROPOSAL)}
+              leads={allLeads.filter(l => l.status === LeadStatus.PROPOSAL)}
             />
           )}
         </TabsContent>
         <TabsContent value='negotiation' className='mt-4'>
-          {leadViewMode === 'list' ? (
+          {viewMode === 'list' ? (
             <LeadListView
-              leads={sortedLeads.filter(
-                l => l.status === LeadStatus.NEGOTIATION
-              )}
+              leads={allLeads.filter(l => l.status === LeadStatus.NEGOTIATION)}
+              total={totalLeads}
+              isLoading={isLoading}
+              onPageChange={handlePageChange}
+              onPageSizeChange={handlePageSizeChange}
+              onSearchChange={handleSearchChange}
+              onSortChange={handleSortingChange}
+              pageIndex={page - 1}
+              pageSize={limit}
+              searchTerm={search}
+              sorting={[{ id: sortBy, desc: sortOrder === 'desc' }]}
             />
           ) : (
             <LeadKanbanView
-              leads={sortedLeads.filter(
-                l => l.status === LeadStatus.NEGOTIATION
-              )}
+              leads={allLeads.filter(l => l.status === LeadStatus.NEGOTIATION)}
             />
           )}
         </TabsContent>
         <TabsContent value='booked' className='mt-4'>
-          {leadViewMode === 'list' ? (
+          {viewMode === 'list' ? (
             <LeadListView
-              leads={sortedLeads.filter(l => l.status === LeadStatus.BOOKED)}
+              leads={allLeads.filter(l => l.status === LeadStatus.BOOKED)}
+              total={totalLeads}
+              isLoading={isLoading}
+              onPageChange={handlePageChange}
+              onPageSizeChange={handlePageSizeChange}
+              onSearchChange={handleSearchChange}
+              onSortChange={handleSortingChange}
+              pageIndex={page - 1}
+              pageSize={limit}
+              searchTerm={search}
+              sorting={[{ id: sortBy, desc: sortOrder === 'desc' }]}
             />
           ) : (
             <LeadKanbanView
-              leads={sortedLeads.filter(l => l.status === LeadStatus.BOOKED)}
+              leads={allLeads.filter(l => l.status === LeadStatus.BOOKED)}
             />
           )}
         </TabsContent>
       </Tabs>
 
-      {filteredLeads.length === 0 && (
+      {allLeads.length === 0 && !isLoading && (
         <Card className='bg-gray-50 border-dashed'>
           <CardHeader className='space-y-1'>
             <CardTitle className='text-xl'>No leads found</CardTitle>

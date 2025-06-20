@@ -54,33 +54,12 @@ export class AuthService extends BaseService<IUser> {
 
   async register(data: IRegisterInput): Promise<{ user: IUser; token: string; metaInfo: ILoginMetadata }> {
     try {
-      const isAgencyObject = typeof data.agency === 'object' && data.agency !== null;
-
-      const agencyObjectId = await this.resolveAgency(data.agency as IAgency);
-
-      const existingUserInfo = await this.checkIfUserExists(data.email);
-      if (existingUserInfo) {
-        throw new BusinessError(
-          `User already exists in agency: ${existingUserInfo.agencyName} (ID: ${existingUserInfo.agencyId})`,
-        );
-      }
-
-      const roleId = isAgencyObject
-        ? await this.resolveSuperAdminRoleId(agencyObjectId)
-        : this.resolveGivenRole(data.role);
-
-      const user = new User({
-        email: data.email,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        role: roleId,
-        agency: agencyObjectId,
-      });
-
-      await user.save();
-
+      const agencyId = await this.resolveAgency(data.agency as IAgency);
+      await this.ensureUserNotExists(data.email);
+      const roleId = await this.determineRoleId(data.role, agencyId, data.agency);
+      const parentId = await this.findParentId(data.agency, agencyId, roleId);
+      const user = await this.createUserRecord(data, agencyId, roleId, parentId);
       const { token, metaInfo } = await this.createAndSendVerification(user, data.password);
-
       return { user, token, metaInfo };
     } catch (error) {
       if (error instanceof ZodError) {
@@ -91,6 +70,61 @@ export class AuthService extends BaseService<IUser> {
       }
       throw new InternalServerError(`Registration failed: ${error.message}`);
     }
+  }
+
+  private async ensureUserNotExists(email: string): Promise<void> {
+    const existing = await this.checkIfUserExists(email);
+    if (existing) {
+      throw new BusinessError(`User already exists in agency: ${existing.agencyName} (ID: ${existing.agencyId})`);
+    }
+  }
+
+  private async determineRoleId(
+    roleInput: string | Types.ObjectId,
+    agencyId: Types.ObjectId,
+    agencyRaw: unknown,
+  ): Promise<Types.ObjectId> {
+    const isNewAgency = typeof agencyRaw === 'object' && agencyRaw !== null;
+    return isNewAgency
+      ? await this.resolveSuperAdminRoleId(agencyId)
+      : this.resolveGivenRole(roleInput as string | Types.ObjectId);
+  }
+
+  private async findParentId(
+    agencyRaw: unknown,
+    agencyId: Types.ObjectId,
+    _roleId: Types.ObjectId, // 🛠 underscore added
+  ): Promise<Types.ObjectId | null> {
+    const isNewAgency = typeof agencyRaw === 'object' && agencyRaw !== null;
+    if (isNewAgency) {
+      return null;
+    }
+
+    const superAdminRole = await Role.findOne({ agency: agencyId, name: 'Super Admin' });
+    if (!superAdminRole) {
+      throw new NotFoundError('Super Admin role not found for this agency');
+    }
+
+    const superAdminUser = await User.findOne({ agency: agencyId, role: superAdminRole._id });
+    return superAdminUser ? (superAdminUser._id as Types.ObjectId) : null;
+  }
+
+  private async createUserRecord(
+    data: IRegisterInput,
+    agencyId: Types.ObjectId,
+    roleId: Types.ObjectId,
+    parentId: Types.ObjectId | null,
+  ): Promise<IUser> {
+    const user = new User({
+      email: data.email,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      role: roleId,
+      agency: agencyId,
+      parentId,
+    });
+    await user.save();
+    return user;
   }
 
   private async checkIfUserExists(email: string): Promise<{ agencyName: string; agencyId: string } | null> {
@@ -181,9 +215,16 @@ export class AuthService extends BaseService<IUser> {
         throw new BadRequestError('Invalid or expired verification token');
       }
 
-      metadata.isEmailVerified = true;
-      metadata.emailVerificationToken = null;
-      metadata.emailVerificationExpires = null;
+      await LoginMetadata.updateOne(
+        { _id: metadata._id },
+        {
+          $set: { isEmailVerified: true },
+          $unset: {
+            emailVerificationToken: '',
+            emailVerificationExpires: '',
+          },
+        },
+      );
       await metadata.save();
     } catch (error) {
       if (error instanceof CustomError) {
@@ -321,10 +362,16 @@ export class AuthService extends BaseService<IUser> {
         throw new BadRequestError('Invalid or expired reset token');
       }
 
-      metadata.password = data.password;
-      metadata.passwordResetToken = null;
-      metadata.passwordResetExpires = null;
-      await metadata.save();
+      await LoginMetadata.updateOne(
+        { _id: metadata._id },
+        {
+          $set: { password: data.password },
+          $unset: {
+            passwordResetToken: '',
+            passwordResetExpires: '',
+          },
+        },
+      );
     } catch (error) {
       if (error instanceof CustomError) {
         throw error;

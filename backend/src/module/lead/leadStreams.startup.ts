@@ -21,7 +21,7 @@ export const initializeLeadStreamsProcessor = async (): Promise<void> => {
 export const shutdownLeadStreamsProcessor = async (): Promise<void> => {
   try {
     console.log('Shutting down lead import streams processor...');
-    // Add any cleanup logic here if needed
+    await leadStreamsService.stopProcessing();
     console.log('Lead import streams processor shutdown complete');
   } catch (error) {
     console.error('Error during lead streams processor shutdown:', error);

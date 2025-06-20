@@ -32,11 +32,14 @@ const BATCH_SIZE = 50;
 const CACHE_TTL = 3600; // 1 hour
 const BLOCK_TIMEOUT = 5000; // 5 seconds
 const BATCH_DELAY = 100; // 100ms
+const SHUTDOWN_TIMEOUT = 5000; // 5 seconds
 
 export class LeadStreamsService {
   private readonly STREAM_KEY = 'lead:imports';
   private readonly GROUP_NAME = 'lead-import-processors';
   private readonly CONSUMER_NAME = 'lead-import-consumer-1';
+  private isShuttingDown = false;
+  private processingPromise: Promise<void> | null = null;
 
   constructor() {
     this.initializeConsumerGroup();
@@ -94,7 +97,7 @@ export class LeadStreamsService {
 
   async processImportJobs(): Promise<void> {
     try {
-      while (true) {
+      while (!this.isShuttingDown) {
         const entries = await redisManager.streams.readGroup(
           this.GROUP_NAME,
           this.CONSUMER_NAME,
@@ -350,10 +353,31 @@ export class LeadStreamsService {
   async startProcessing(): Promise<void> {
     console.log('Starting lead import processor...');
     try {
-      await this.processImportJobs();
+      this.isShuttingDown = false;
+      this.processingPromise = this.processImportJobs();
+      await this.processingPromise;
     } catch (error) {
       console.error('Lead import processor failed:', error);
     }
+  }
+
+  async stopProcessing(): Promise<void> {
+    console.log('Stopping lead import processor...');
+    this.isShuttingDown = true;
+
+    if (this.processingPromise) {
+      try {
+        // Wait for the current processing to complete
+        await Promise.race([
+          this.processingPromise,
+          new Promise((resolve) => setTimeout(resolve, SHUTDOWN_TIMEOUT)), // 5 second timeout
+        ]);
+      } catch (error) {
+        console.error('Error waiting for processor to stop:', error);
+      }
+    }
+
+    console.log('Lead import processor stopped');
   }
 }
 

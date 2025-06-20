@@ -54,8 +54,8 @@ export class AuthService extends BaseService<IUser> {
 
   async register(data: IRegisterInput): Promise<{ user: IUser; token: string; metaInfo: ILoginMetadata }> {
     try {
-      const agencyId = await this.resolveAgency(data.agency as IAgency);
       await this.ensureUserNotExists(data.email);
+      const agencyId = await this.resolveAgency(data.agency as IAgency);
       const roleId = await this.determineRoleId(data.role, agencyId, data.agency);
       const parentId = await this.findParentId(data.agency, agencyId, roleId);
       const user = await this.createUserRecord(data, agencyId, roleId, parentId);

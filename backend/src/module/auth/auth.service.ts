@@ -56,22 +56,25 @@ export class AuthService extends BaseService<IUser> {
     try {
       const isAgencyObject = typeof data.agency === 'object' && data.agency !== null;
 
-      const agencyId = await this.resolveAgency(data.agency as IAgency);
-      const roleId = isAgencyObject
-        ? await this.resolveSuperAdminRoleId(agencyId)
-        : this.resolveGivenRole(data.role);
+      const agencyObjectId = await this.resolveAgency(data.agency as IAgency);
 
-      const existingUser = await User.findOne({ email: { $eq: data.email } });
-      if (existingUser) {
-        throw new BusinessError('User already exists in this agency');
+      const existingUserInfo = await this.checkIfUserExists(data.email);
+      if (existingUserInfo) {
+        throw new BusinessError(
+          `User already exists in agency: ${existingUserInfo.agencyName} (ID: ${existingUserInfo.agencyId})`,
+        );
       }
+
+      const roleId = isAgencyObject
+        ? await this.resolveSuperAdminRoleId(agencyObjectId)
+        : this.resolveGivenRole(data.role);
 
       const user = new User({
         email: data.email,
         firstName: data.firstName,
         lastName: data.lastName,
         role: roleId,
-        agency: agencyId,
+        agency: agencyObjectId,
       });
 
       await user.save();
@@ -90,7 +93,21 @@ export class AuthService extends BaseService<IUser> {
     }
   }
 
-  // Make sure this is inside AuthService class
+  private async checkIfUserExists(email: string): Promise<{ agencyName: string; agencyId: string } | null> {
+    const existingUser = await User.findOne({ email: { $eq: email } })
+      .populate<{ agency: { _id: Types.ObjectId; name: string } }>('agency')
+      .lean();
+
+    if (!existingUser) {
+      return null;
+    }
+
+    const agencyName = existingUser.agency?.name || 'Unknown Agency';
+    const agencyId = existingUser.agency?._id?.toString() || 'Unknown ID';
+
+    return { agencyName, agencyId };
+  }
+
   private async resolveAgency(agency: IAgency | string): Promise<Types.ObjectId> {
     if (agency && typeof agency === 'object') {
       const validatedAgency = createAgencySchema.parse(agency);
@@ -130,7 +147,6 @@ export class AuthService extends BaseService<IUser> {
     return role._id as Types.ObjectId;
   }
 
-
   private async createAndSendVerification(
     user: IUser,
     password: string,
@@ -140,7 +156,11 @@ export class AuthService extends BaseService<IUser> {
       await metadata.generateEmailVerificationToken();
       const token = metadata.emailVerificationToken;
       const metaInfo = await metadata.save();
-      emailService.sendVerificationEmail(user.email, token);
+      try {
+        emailService.sendVerificationEmail(user.email, token);
+      } catch (emailError) {
+        console.error('Email sending failed:', emailError);
+      }
       return { metadata, token, metaInfo };
     } catch (error) {
       if (error instanceof CustomError) {

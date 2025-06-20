@@ -151,6 +151,7 @@ const CrmBookingsNewLeadIdRoute = CrmBookingsNewLeadIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '': typeof AuthRouteWithChildren
   '/crm/dashboard': typeof CrmDashboardRoute
   '/crm': typeof CrmIndexRoute
   '/crm/bookings/new': typeof CrmBookingsNewRouteWithChildren
@@ -175,6 +176,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '': typeof AuthRouteWithChildren
   '/crm/dashboard': typeof CrmDashboardRoute
   '/crm': typeof CrmIndexRoute
   '/crm/bookings/new': typeof CrmBookingsNewRouteWithChildren
@@ -227,6 +229,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | ''
     | '/crm/dashboard'
     | '/crm'
     | '/crm/bookings/new'
@@ -251,6 +254,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | ''
     | '/crm/dashboard'
     | '/crm'
     | '/crm/bookings/new'

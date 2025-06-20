@@ -17,6 +17,7 @@ export class LeadController {
       const lead = await leadService.createLead(
         { ...req.body, agencyId: req.user.agency as string },
         req.user.agencyCode as string,
+        req,
       );
       res.customSuccess(new CreatedSuccess(lead, 'Lead created successfully.'));
     } catch (error) {

@@ -1,6 +1,7 @@
 import { Document, Schema, Types, model } from 'mongoose';
 
 import { LeadSource, LeadStatus } from '../../types/enum/lead';
+import { initChangeLogMiddleware } from '../middlewares/changeLog.middleware';
 
 export interface ILead extends Document {
   agencyId: Types.ObjectId;
@@ -256,5 +257,7 @@ leadSchema.index({
 
 // Compound index to ensure unique lead number per agency
 leadSchema.index({ agencyId: 1, leadNumber: 1 }, { unique: true });
+
+initChangeLogMiddleware(leadSchema);
 
 export const Lead = model<ILead>('Lead', leadSchema);

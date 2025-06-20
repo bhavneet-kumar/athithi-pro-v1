@@ -54,30 +54,12 @@ export class AuthService extends BaseService<IUser> {
 
   async register(data: IRegisterInput): Promise<{ user: IUser; token: string; metaInfo: ILoginMetadata }> {
     try {
-      const isAgencyObject = typeof data.agency === 'object' && data.agency !== null;
-
+      await this.ensureUserNotExists(data.email);
       const agencyId = await this.resolveAgency(data.agency as IAgency);
-      const roleId = isAgencyObject
-        ? await this.resolveSuperAdminRoleId(agencyId)
-        : this.resolveGivenRole(data.role);
-
-      const existingUser = await User.findOne({ email: { $eq: data.email } });
-      if (existingUser) {
-        throw new BusinessError('User already exists in this agency');
-      }
-
-      const user = new User({
-        email: data.email,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        role: roleId,
-        agency: agencyId,
-      });
-
-      await user.save();
-
+      const roleId = await this.determineRoleId(data.role, agencyId, data.agency);
+      const parentId = await this.findParentId(data.agency, agencyId, roleId);
+      const user = await this.createUserRecord(data, agencyId, roleId, parentId);
       const { token, metaInfo } = await this.createAndSendVerification(user, data.password);
-
       return { user, token, metaInfo };
     } catch (error) {
       if (error instanceof ZodError) {
@@ -90,7 +72,76 @@ export class AuthService extends BaseService<IUser> {
     }
   }
 
-  // Make sure this is inside AuthService class
+  private async ensureUserNotExists(email: string): Promise<void> {
+    const existing = await this.checkIfUserExists(email);
+    if (existing) {
+      throw new BusinessError(`User already exists in agency: ${existing.agencyName} (ID: ${existing.agencyId})`);
+    }
+  }
+
+  private async determineRoleId(
+    roleInput: string | Types.ObjectId,
+    agencyId: Types.ObjectId,
+    agencyRaw: unknown,
+  ): Promise<Types.ObjectId> {
+    const isNewAgency = typeof agencyRaw === 'object' && agencyRaw !== null;
+    return isNewAgency
+      ? await this.resolveSuperAdminRoleId(agencyId)
+      : this.resolveGivenRole(roleInput as string | Types.ObjectId);
+  }
+
+  private async findParentId(
+    agencyRaw: unknown,
+    agencyId: Types.ObjectId,
+    _roleId: Types.ObjectId, // 🛠 underscore added
+  ): Promise<Types.ObjectId | null> {
+    const isNewAgency = typeof agencyRaw === 'object' && agencyRaw !== null;
+    if (isNewAgency) {
+      return null;
+    }
+
+    const superAdminRole = await Role.findOne({ agency: agencyId, name: 'Super Admin' });
+    if (!superAdminRole) {
+      throw new NotFoundError('Super Admin role not found for this agency');
+    }
+
+    const superAdminUser = await User.findOne({ agency: agencyId, role: superAdminRole._id });
+    return superAdminUser ? (superAdminUser._id as Types.ObjectId) : null;
+  }
+
+  private async createUserRecord(
+    data: IRegisterInput,
+    agencyId: Types.ObjectId,
+    roleId: Types.ObjectId,
+    parentId: Types.ObjectId | null,
+  ): Promise<IUser> {
+    const user = new User({
+      email: data.email,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      role: roleId,
+      agency: agencyId,
+      parentId,
+    });
+    await user.save();
+    return user;
+  }
+
+  private async checkIfUserExists(email: string): Promise<{ agencyName: string; agencyId: string } | null> {
+    const existingUser = await User.findOne({ email: { $eq: email } })
+      .populate<{ agency: { _id: Types.ObjectId; name: string } }>('agency')
+      .lean();
+
+    if (!existingUser) {
+      return null;
+    }
+
+    const agencyName = existingUser.agency?.name || 'Unknown Agency';
+    const agencyId = existingUser.agency?._id?.toString() || 'Unknown ID';
+
+    return { agencyName, agencyId };
+  }
+
   private async resolveAgency(agency: IAgency | string): Promise<Types.ObjectId> {
     if (agency && typeof agency === 'object') {
       const validatedAgency = createAgencySchema.parse(agency);
@@ -130,7 +181,6 @@ export class AuthService extends BaseService<IUser> {
     return role._id as Types.ObjectId;
   }
 
-
   private async createAndSendVerification(
     user: IUser,
     password: string,
@@ -140,7 +190,11 @@ export class AuthService extends BaseService<IUser> {
       await metadata.generateEmailVerificationToken();
       const token = metadata.emailVerificationToken;
       const metaInfo = await metadata.save();
-      emailService.sendVerificationEmail(user.email, token);
+      try {
+        emailService.sendVerificationEmail(user.email, token);
+      } catch (emailError) {
+        console.error('Email sending failed:', emailError);
+      }
       return { metadata, token, metaInfo };
     } catch (error) {
       if (error instanceof CustomError) {
@@ -161,9 +215,16 @@ export class AuthService extends BaseService<IUser> {
         throw new BadRequestError('Invalid or expired verification token');
       }
 
-      metadata.isEmailVerified = true;
-      metadata.emailVerificationToken = null;
-      metadata.emailVerificationExpires = null;
+      await LoginMetadata.updateOne(
+        { _id: metadata._id },
+        {
+          $set: { isEmailVerified: true },
+          $unset: {
+            emailVerificationToken: '',
+            emailVerificationExpires: '',
+          },
+        },
+      );
       await metadata.save();
     } catch (error) {
       if (error instanceof CustomError) {
@@ -301,10 +362,16 @@ export class AuthService extends BaseService<IUser> {
         throw new BadRequestError('Invalid or expired reset token');
       }
 
-      metadata.password = data.password;
-      metadata.passwordResetToken = null;
-      metadata.passwordResetExpires = null;
-      await metadata.save();
+      await LoginMetadata.updateOne(
+        { _id: metadata._id },
+        {
+          $set: { password: data.password },
+          $unset: {
+            passwordResetToken: '',
+            passwordResetExpires: '',
+          },
+        },
+      );
     } catch (error) {
       if (error instanceof CustomError) {
         throw error;

@@ -54,26 +54,28 @@ export class AuthService extends BaseService<IUser> {
 
   async register(data: IRegisterInput): Promise<{ user: IUser; token: string; metaInfo: ILoginMetadata }> {
     try {
-      if (!isValidObjectId(data.role) && !mongoose.Types.ObjectId.isValid(data.role)) {
-        throw new BadRequestError('Invalid role ID format');
-      }
-      const role = await Role.findOne({ _id: { $eq: data.role } });
-      if (!role) {
-        throw new BadRequestError('Invalid role provided');
-      }
+      const isAgencyObject = typeof data.agency === 'object' && data.agency !== null;
+
       const agencyId = await this.resolveAgency(data.agency as IAgency);
-      const dup = await User.findOne({ email: { $eq: data.email } });
-      if (dup) {
-        throw new BusinessError(`User already exists in this agency`);
+      const roleId = isAgencyObject
+        ? await this.resolveSuperAdminRoleId(agencyId)
+        : this.resolveGivenRole(data.role);
+
+      const existingUser = await User.findOne({ email: { $eq: data.email } });
+      if (existingUser) {
+        throw new BusinessError('User already exists in this agency');
       }
+
       const user = new User({
         email: data.email,
         firstName: data.firstName,
         lastName: data.lastName,
-        role: role._id,
+        role: roleId,
         agency: agencyId,
       });
+
       await user.save();
+
       const { token, metaInfo } = await this.createAndSendVerification(user, data.password);
 
       return { user, token, metaInfo };
@@ -88,7 +90,8 @@ export class AuthService extends BaseService<IUser> {
     }
   }
 
-  private async resolveAgency(agency: IAgency): Promise<Types.ObjectId | string> {
+  // Make sure this is inside AuthService class
+  private async resolveAgency(agency: IAgency | string): Promise<Types.ObjectId> {
     if (agency && typeof agency === 'object') {
       const validatedAgency = createAgencySchema.parse(agency);
       const createdAgency = await agencyService.createAgency(validatedAgency);
@@ -101,11 +104,32 @@ export class AuthService extends BaseService<IUser> {
       if (!existingAgency) {
         throw new BadRequestError('Invalid agency provided');
       }
-
       return existingAgency._id as Types.ObjectId;
     }
     throw new BadRequestError('Agency is required');
   }
+
+  private resolveGivenRole(roleId: string | Types.ObjectId): Types.ObjectId {
+    if (!isValidObjectId(roleId)) {
+      throw new BadRequestError('Invalid role ID format');
+    }
+    return new mongoose.Types.ObjectId(roleId);
+  }
+
+  private async resolveSuperAdminRoleId(agencyId: string | Types.ObjectId): Promise<Types.ObjectId> {
+    const objectId = new mongoose.Types.ObjectId(agencyId);
+    const role = await Role.findOne({
+      name: 'Super Admin',
+      agency: objectId,
+    });
+
+    if (!role) {
+      throw new NotFoundError(`Super Admin role not found for agency ${agencyId}`);
+    }
+
+    return role._id as Types.ObjectId;
+  }
+
 
   private async createAndSendVerification(
     user: IUser,

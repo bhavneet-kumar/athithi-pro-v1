@@ -1,6 +1,7 @@
 // Define which fields to track for each model
 export const TRACKED_FIELDS = {
   Lead: [
+    'fullName',
     'status',
     'priority',
     'assignedTo',

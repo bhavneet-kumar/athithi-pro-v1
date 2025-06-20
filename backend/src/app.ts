@@ -27,6 +27,9 @@ app.use(passport.initialize());
 // Response middleware
 app.use(successResponseMiddleware);
 
+// Trust proxy
+app.set('trust proxy', true);
+
 // Routes
 app.use('/api/v1', routes);
 

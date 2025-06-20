@@ -1,3 +1,4 @@
+/* eslint-disable max-lines-per-function */
 /* eslint-disable complexity */
 import { NextFunction, Request } from 'express';
 import { ClientSession, Schema, Types } from 'mongoose';
@@ -47,6 +48,7 @@ interface LogChangeOptions {
   session?: ClientSession;
   ipAddress?: string;
   userAgent?: string;
+  modelName: string;
 }
 
 // Simple value equality check
@@ -121,7 +123,7 @@ const detectChanges = (
 // Create metadata object from request
 const createMetadata = (options: LogChangeOptions): ChangeLogMetadata => ({
   ip: options.ipAddress || options.req?.ip,
-  userAgent: options.userAgent || options.req.headers['user-agent'],
+  userAgent: options.userAgent || options.req?.headers?.['user-agent'],
 });
 
 // Log changes to the database
@@ -131,8 +133,8 @@ const logChange = async (
   operation: 'CREATE' | 'UPDATE',
   options: LogChangeOptions,
 ): Promise<void> => {
-  const { constructor, _id } = doc;
-  const { modelName } = constructor;
+  const { _id } = doc;
+  const { modelName } = options;
 
   if (!modelName || !isModelTracked(modelName)) {
     return;
@@ -163,15 +165,15 @@ const logChange = async (
       changedBy,
       metadata,
     });
-
-    await changeLogEntry.save({ session: options.session });
+    const { session } = options;
+    await changeLogEntry.save({ session });
   } catch (error) {
     console.error('[ChangeLog] Failed to create change log entry:', error);
   }
 };
 
 // Set up post-save hook for a model
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 export const setUpPostSaveHook = (modelSchema: Schema): void => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   modelSchema.post('save', async function (this: any, next: NextFunction) {
@@ -187,11 +189,14 @@ export const setUpPostSaveHook = (modelSchema: Schema): void => {
       // Skip oldDoc retrieval for CREATE operations
       const originalDoc = isNew ? null : oldDoc;
 
-      await logChange(this as AuditableDocument, originalDoc, isNew ? 'CREATE' : 'UPDATE', {
+      const { modelName } = this.constructor;
+
+      await logChange(this as AuditableDocument, originalDoc, !oldDoc ? 'CREATE' : 'UPDATE', {
         ipAddress,
         userAgent,
         session,
         req,
+        modelName,
       });
     } catch (error) {
       console.error('[ChangeLog] Error in post-save hook:', error);
@@ -204,27 +209,58 @@ export const setUpPostUpdateHook = (modelSchema: Schema): void => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   modelSchema.post('updateOne', async function (this: any, result: any, next: NextFunction) {
     try {
-      const { req, session, oldDoc } = this.getOptions().context;
+      const { req, session, oldDoc } = this.getOptions()?.context || {};
 
-      const updatedDoc = result.toObject() || null;
+      // const updatedDoc = result.toObject() || null;
 
       const ipAddress = req?.ip;
       const userAgent = req?.headers?.['user-agent'];
 
-      if (!oldDoc || !updatedDoc) {
+      const { modelName } = this.model;
+
+      if (!oldDoc || !result) {
         throw new Error('Original or updated document not found');
       }
 
-      await logChange(updatedDoc as AuditableDocument, oldDoc, 'UPDATE', {
+      await logChange(result as AuditableDocument, oldDoc, 'UPDATE', {
         ipAddress,
         userAgent,
         session,
         req,
+        modelName,
       });
 
       next();
     } catch (error) {
-      console.error('[ChangeLog] Error in post-update hook:', error);
+      console.error('[ChangeLog] Error in post-updateOne hook:', error);
+      next(error);
+    }
+  });
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  modelSchema.post('findOneAndUpdate', async function (this: any, result: any, next: NextFunction) {
+    try {
+      const { req, session, oldDoc } = this.getOptions()?.context || {};
+      const ipAddress = req?.ip;
+      const userAgent = req?.headers?.['user-agent'];
+
+      const { modelName } = this.model;
+
+      if (!oldDoc || !result) {
+        throw new Error('Original or updated document not found');
+      }
+
+      await logChange(result as AuditableDocument, oldDoc, 'UPDATE', {
+        ipAddress,
+        userAgent,
+        session,
+        req,
+        modelName,
+      });
+
+      next();
+    } catch (error) {
+      console.error('[ChangeLog] Error in post-findOneAndUpdate hook:', error);
       next(error);
     }
   });

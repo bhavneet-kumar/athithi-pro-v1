@@ -191,6 +191,11 @@ export const leadValidator = {
   changeStatusSchema: z
     .object({
       status: z.nativeEnum(LeadStatus),
+      updatedAt: z.date().optional(),
+      updatedBy: objectIdSchema.nullable().optional(),
+      isDeleted: z.boolean().optional(),
+      deletedAt: z.date().optional(),
+      deletedBy: objectIdSchema.nullable().optional(),
     })
     .strict(),
 };

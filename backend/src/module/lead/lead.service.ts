@@ -23,7 +23,6 @@ export class LeadService extends BaseService<ILead> {
     super(Lead, 'Lead');
   }
 
-  // eslint-disable-next-line max-statements
   async createLead(data: ILeadCreate, agencyCode: string, req?: Request): Promise<ILead & { agencyCode: string }> {
     const session = await mongoose.startSession();
     session.startTransaction();
@@ -47,7 +46,7 @@ export class LeadService extends BaseService<ILead> {
 
       const leadNumber = `${agencyCode}-${currentYear}-${counter.value.toString().padStart(LEAD_NUMBER_PAD_LENGTH, '0')}`;
 
-      const dataToCreate = { ...data, leadNumber, $req: req?.toString(), $session: session, $oldDoc: null };
+      const dataToCreate = { ...data, leadNumber, $req: req, $session: session, $oldDoc: null };
 
       const createdLead = await this.create(dataToCreate as unknown as ILead & PluginMetaForSave, {
         session,
@@ -138,12 +137,21 @@ export class LeadService extends BaseService<ILead> {
     }
   }
 
-  async update(id: string, data: ILeadUpdate, agencyId: string): Promise<ILead> {
+  // eslint-disable-next-line max-lines-per-function, max-statements
+  async update(id: string, data: ILeadUpdate, agencyId: string, req?: Request): Promise<ILead> {
+    const session = await mongoose.startSession();
+    session.startTransaction();
     try {
       const query: { _id: string; agencyId: string } = { _id: id, agencyId };
 
       // Remove aiScore from data to avoid conflicts
       const { aiScore: _aiScore, ...restData } = data;
+
+      const oldDoc = await this.getById(id, agencyId);
+
+      if (!oldDoc) {
+        throw new NotFoundError(`Lead not found with ID: ${id}`);
+      }
 
       const updateData = {
         ...restData,
@@ -157,8 +165,18 @@ export class LeadService extends BaseService<ILead> {
         },
       };
 
+      const context = {
+        oldDoc,
+        req,
+        session,
+      };
+
       const updatedLead = await this.model
-        .findOneAndUpdate(query, updateData, { new: true })
+        .findOneAndUpdate(query, updateData, {
+          new: true,
+          session,
+          context: context as unknown as string,
+        })
         .select('fullName email status phone alternatePhone createdAt updatedAt source aiScore.value')
         .lean({ virtuals: true })
         .exec();
@@ -167,14 +185,19 @@ export class LeadService extends BaseService<ILead> {
         throw new NotFoundError(`Lead not found with ID: ${id}`);
       }
 
+      await session.commitTransaction();
+
       return updatedLead as ILead;
     } catch (error) {
+      await session.abortTransaction();
       if (error instanceof CustomError) {
         throw error;
       }
       throw new InternalServerError(
         `Lead updating failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
       );
+    } finally {
+      await session.endSession();
     }
   }
 

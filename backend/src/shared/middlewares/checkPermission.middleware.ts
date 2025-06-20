@@ -10,7 +10,7 @@ interface AuthenticatedUser {
   id: string;
   agency: string;
   agencyCode: string;
-  role: any;
+  role: IRole;
 }
 
 interface AuthenticatedRequest extends Request {
@@ -19,23 +19,21 @@ interface AuthenticatedRequest extends Request {
 
 export const checkPermission =
   (resource: string, action: string) =>
-    async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
-      if (!req.user) {
-        throw new ForbiddenError('User not authenticated');
-      }
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    if (!req.user) {
+      throw new ForbiddenError('User not authenticated');
+    }
 
-      const { role } = req.user;
-      const permission = `${resource}:${action}`;
+    const { role } = req.user;
+    const permission = `${resource}:${action}`;
 
-      console.log(role, permission, '+++++ROLE&&&&&&&&&&&&&');
+    const hasPermission = await agencyRoleService.hasPermission(role, permission);
 
-      const hasPermission = await agencyRoleService.hasPermission(role, permission);
+    if (!hasPermission) {
+      next(new ForbiddenError(`User does not have ${action} permission for ${resource}`));
+    }
 
-      if (!hasPermission) {
-        next(new ForbiddenError(`User does not have ${action} permission for ${resource}`));
-      }
+    auditMiddleware(req, res, next);
 
-      auditMiddleware(req, res, next);
-
-      next();
-    };
+    next();
+  };

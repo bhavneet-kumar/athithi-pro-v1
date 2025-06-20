@@ -19,10 +19,10 @@ export class AuthController {
    */
   async register(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      if (!req.body || !req.body?.email || !req.body?.password) {
+      if (!req.body?.email || !req.body?.password) {
         throw new BadRequestError('Email and password are required');
       }
-      const user = await authService.register(req?.body);
+      const user = await authService.register(req.body);
       res.customSuccess(
         new CreatedSuccess(user, 'User created successfully. Please check your email for verification.'),
       );
@@ -82,8 +82,9 @@ export class AuthController {
       if (!email) {
         throw new BadRequestError('Email is required');
       }
-      await authService.forgotPassword(email);
-      res.customSuccess(new OkSuccess(null, 'Password reset email sent'));
+      const forgotPasswordData = await authService.forgotPassword(email);
+
+      res.customSuccess(new OkSuccess(forgotPasswordData, 'Password reset email sent'));
     } catch (error) {
       next(error);
     }

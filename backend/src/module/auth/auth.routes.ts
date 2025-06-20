@@ -1,6 +1,6 @@
 import { Router } from 'express';
 
-import { loginLimiter, passwordResetLimiter } from '../../shared/middlewares/rateLimiter.middleware';
+import { signupLimiter, loginLimiter, passwordResetLimiter } from '../../shared/middlewares/rateLimiter.middleware';
 import { validateBody, validateParams } from '../../shared/middlewares/validation.middleware';
 
 import { authController } from './auth.controller';
@@ -51,12 +51,7 @@ const router = Router();
  *                 pattern: '^[0-9a-fA-F]{24}$'
  */
 // Register route with validation and rate limiting
-router.post(
-  '/register',
-  // signupLimiter,
-  validateBody(registerSchema),
-  authController.register,
-);
+router.post('/register', signupLimiter, validateBody(registerSchema), authController.register);
 
 /**
  =* @swagger

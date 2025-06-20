@@ -153,13 +153,13 @@ export class AuthService extends BaseService<IUser> {
     try {
       const user = await this.findOne({ email: data.email });
       if (!user) {
-        throw new UnauthorizedError('Invalid credentials');
+        throw new UnauthorizedError('Users Does not exist');
       }
 
       console.log(user, '++++++++++++++');
       const metadata = await LoginMetadata.findOne({ userId: user._id });
       if (!metadata) {
-        throw new UnauthorizedError('Invalid credentials');
+        throw new UnauthorizedError('Users login metadata does not exist');
       }
 
       console.log(metadata, '++++++++++++++');
@@ -237,7 +237,7 @@ export class AuthService extends BaseService<IUser> {
     };
   }
 
-  async forgotPassword(email: string): Promise<void> {
+  async forgotPassword(email: string): Promise<{ email: string; token: string }> {
     try {
       const user = await User.findOne({ email: { $eq: email } });
       if (!user) {
@@ -250,10 +250,14 @@ export class AuthService extends BaseService<IUser> {
       }
 
       await metadata.generatePasswordResetToken();
+
       if (!metadata.passwordResetToken) {
         throw new InternalServerError('Failed to generate password reset token');
       }
+
       emailService.sendPasswordResetEmail(user.email, metadata.passwordResetToken);
+
+      return { email: user.email, token: metadata.passwordResetToken }; // send something back
     } catch (error) {
       if (error instanceof CustomError) {
         throw error;

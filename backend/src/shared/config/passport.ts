@@ -17,7 +17,7 @@ passport.use(
     },
     async (email: string, password: string, done) => {
       try {
-        const user = await User.findOne({ email });
+        const user = await User.findOne({ email }).populate('role');
         if (!user) {
           return done(new Error('Invalid credentials'));
         }
@@ -64,9 +64,10 @@ passport.use(
           id: user.id.toString(),
           agency: user.agency.toString(),
           agencyCode: agency.code.toString(),
-          role: {
+          role_type: {
             type: role.type as 'super_admin' | 'manager' | 'agent',
           },
+          role,
         });
       } catch (error) {
         return done(error);

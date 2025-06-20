@@ -1,5 +1,5 @@
 import { Permission } from '../../shared/models/permission.model';
-import { Role, RoleType } from '../../shared/models/role.model';
+import { IRole, Role, RoleType } from '../../shared/models/role.model';
 
 interface AgencyRoleInfo {
   id: string;
@@ -75,15 +75,10 @@ class AgencyRoleService {
   }
 
   // Check if user has permission
-  async hasPermission(agencyId: string, roleType: RoleType, permission: string): Promise<boolean> {
-    const role = await Role.findOne({ agency: agencyId, type: roleType });
+  async hasPermission(role: IRole, permission: string): Promise<boolean> {
+    // const role = await Role.findOne({ agency: agencyId, type: roleType });
     if (!role) {
       return false;
-    }
-
-    // Super admin has all permissions
-    if (role.type === 'super_admin') {
-      return true;
     }
 
     return role.permissions.includes(permission);

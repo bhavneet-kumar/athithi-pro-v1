@@ -54,25 +54,28 @@ export class AuthService extends BaseService<IUser> {
 
   async register(data: IRegisterInput): Promise<{ user: IUser; token: string; metaInfo: ILoginMetadata }> {
     try {
-      if (!isValidObjectId(data.role) && !mongoose.Types.ObjectId.isValid(data.role)) {
-        throw new BadRequestError('Invalid role ID format');
-      }
-      const role = await Role.findOne({ _id: { $eq: data.role } });
-      if (!role) {
-        throw new BadRequestError('Invalid role provided');
-      }
+      const isAgencyObject = typeof data.agency === 'object' && data.agency !== null;
+
       const agencyId = await this.resolveAgency(data.agency as IAgency);
-      const dup = await User.findOne({ email: { $eq: data.email } });
-      if (dup) {
-        throw new BusinessError(`User already exists in this agency`);
+      const roleId = isAgencyObject
+        ? await this.resolveSuperAdminRoleId(agencyId)
+        : this.resolveGivenRole(data.role);
+
+      const existingUser = await User.findOne({ email: { $eq: data.email } });
+      if (existingUser) {
+        throw new BusinessError('User already exists in this agency');
       }
+
       const user = new User({
         email: data.email,
         firstName: data.firstName,
         lastName: data.lastName,
-        role: role._id,
+        role: roleId,
         agency: agencyId,
       });
+
+      await user.save();
+
       const { token, metaInfo } = await this.createAndSendVerification(user, data.password);
 
       return { user, token, metaInfo };
@@ -87,7 +90,8 @@ export class AuthService extends BaseService<IUser> {
     }
   }
 
-  private async resolveAgency(agency: IAgency): Promise<Types.ObjectId | string> {
+  // Make sure this is inside AuthService class
+  private async resolveAgency(agency: IAgency | string): Promise<Types.ObjectId> {
     if (agency && typeof agency === 'object') {
       const validatedAgency = createAgencySchema.parse(agency);
       const createdAgency = await agencyService.createAgency(validatedAgency);
@@ -100,11 +104,32 @@ export class AuthService extends BaseService<IUser> {
       if (!existingAgency) {
         throw new BadRequestError('Invalid agency provided');
       }
-
       return existingAgency._id as Types.ObjectId;
     }
     throw new BadRequestError('Agency is required');
   }
+
+  private resolveGivenRole(roleId: string | Types.ObjectId): Types.ObjectId {
+    if (!isValidObjectId(roleId)) {
+      throw new BadRequestError('Invalid role ID format');
+    }
+    return new mongoose.Types.ObjectId(roleId);
+  }
+
+  private async resolveSuperAdminRoleId(agencyId: string | Types.ObjectId): Promise<Types.ObjectId> {
+    const objectId = new mongoose.Types.ObjectId(agencyId);
+    const role = await Role.findOne({
+      name: 'Super Admin',
+      agency: objectId,
+    });
+
+    if (!role) {
+      throw new NotFoundError(`Super Admin role not found for agency ${agencyId}`);
+    }
+
+    return role._id as Types.ObjectId;
+  }
+
 
   private async createAndSendVerification(
     user: IUser,
@@ -115,7 +140,7 @@ export class AuthService extends BaseService<IUser> {
       await metadata.generateEmailVerificationToken();
       const token = metadata.emailVerificationToken;
       const metaInfo = await metadata.save();
-      await emailService.sendVerificationEmail(user.email, token);
+      emailService.sendVerificationEmail(user.email, token);
       return { metadata, token, metaInfo };
     } catch (error) {
       if (error instanceof CustomError) {
@@ -152,13 +177,13 @@ export class AuthService extends BaseService<IUser> {
     try {
       const user = await this.findOne({ email: data.email });
       if (!user) {
-        throw new UnauthorizedError('Invalid credentials');
+        throw new UnauthorizedError('Users Does not exist');
       }
 
       console.log(user, '++++++++++++++');
       const metadata = await LoginMetadata.findOne({ userId: user._id });
       if (!metadata) {
-        throw new UnauthorizedError('Invalid credentials');
+        throw new UnauthorizedError('Users login metadata does not exist');
       }
 
       console.log(metadata, '++++++++++++++');
@@ -236,7 +261,7 @@ export class AuthService extends BaseService<IUser> {
     };
   }
 
-  async forgotPassword(email: string): Promise<void> {
+  async forgotPassword(email: string): Promise<{ email: string; token: string }> {
     try {
       const user = await User.findOne({ email: { $eq: email } });
       if (!user) {
@@ -249,10 +274,14 @@ export class AuthService extends BaseService<IUser> {
       }
 
       await metadata.generatePasswordResetToken();
+
       if (!metadata.passwordResetToken) {
         throw new InternalServerError('Failed to generate password reset token');
       }
-      await emailService.sendPasswordResetEmail(user.email, metadata.passwordResetToken);
+
+      emailService.sendPasswordResetEmail(user.email, metadata.passwordResetToken);
+
+      return { email: user.email, token: metadata.passwordResetToken }; // send something back
     } catch (error) {
       if (error instanceof CustomError) {
         throw error;

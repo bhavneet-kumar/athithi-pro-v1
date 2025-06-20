@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 
 import { agencyRoleService } from '../../module/agency/agencyRole.service';
-import { UserRole } from '../../types/enum/user';
+import { IRole } from '../models/role.model';
 import { ForbiddenError } from '../utils/customError';
 
 import { auditMiddleware } from './audit.middleware';
@@ -10,9 +10,7 @@ interface AuthenticatedUser {
   id: string;
   agency: string;
   agencyCode: string;
-  role: {
-    type: UserRole;
-  };
+  role: IRole;
 }
 
 interface AuthenticatedRequest extends Request {
@@ -26,16 +24,16 @@ export const checkPermission =
       throw new ForbiddenError('User not authenticated');
     }
 
-    const { agency, role } = req.user;
+    const { role } = req.user;
     const permission = `${resource}:${action}`;
 
-    const hasPermission = await agencyRoleService.hasPermission(agency, role.type, permission);
+    const hasPermission = await agencyRoleService.hasPermission(role, permission);
 
     if (!hasPermission) {
-      throw new ForbiddenError(`User does not have ${action} permission for ${resource}`);
+      next(new ForbiddenError(`User does not have ${action} permission for ${resource}`));
     }
 
     auditMiddleware(req, res, next);
 
-    // next();
+    next();
   };

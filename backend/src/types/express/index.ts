@@ -1,6 +1,5 @@
 import 'express';
-import { UserRole } from 'types/enum/user';
-
+import type { IRole } from '../../shared/models/role.model'; // Make sure path is correct
 import type CustomSuccess from '../../shared/utils/customSuccess';
 
 declare module 'express-serve-static-core' {
@@ -13,9 +12,7 @@ declare module 'express-serve-static-core' {
       id: string;
       agency: string;
       agencyCode: string;
-      role: {
-        type: UserRole;
-      };
+      role: IRole;
     };
   }
 }

@@ -3,7 +3,9 @@ import { Socket } from 'node:net';
 
 import { Application } from 'express';
 
-import { connectDB, closeDB } from '../config/db';
+import { initializeLeadStreamsProcessor, shutdownLeadStreamsProcessor } from '../../module/lead/leadStreams.startup';
+import { closeDB, connectDB } from '../config/db';
+import { redisManager } from '../config/redis/redisManager';
 import { InternalServerError } from '../utils/customError';
 
 // ApplicationServer handles server lifecycle and graceful shutdown
@@ -50,8 +52,10 @@ export class ApplicationServer {
     try {
       console.log('Starting server initialization...');
       await this.connectDatabase();
+      await this.connectToRedis();
       this.createServer();
       await this.startListening();
+      await initializeLeadStreamsProcessor();
       console.log(`Server successfully started on port ${this.port}`);
       console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
       console.log(`Server timeout: ${this.timeout}ms`);
@@ -59,6 +63,17 @@ export class ApplicationServer {
     } catch (error) {
       console.error('Failed to start server:', error);
       await this.handleShutdown('STARTUP_ERROR', error);
+    }
+  }
+
+  private async connectToRedis(): Promise<void> {
+    try {
+      console.log('Connecting to Redis...');
+      await redisManager.connect();
+      console.log('Redis connected successfully');
+    } catch (error) {
+      console.error('Redis connection failed:', error);
+      throw new InternalServerError('Failed to connect to Redis');
     }
   }
 
@@ -153,6 +168,8 @@ export class ApplicationServer {
     try {
       await this.shutdownServer();
       await this.shutdownDatabase();
+      await shutdownLeadStreamsProcessor();
+      await redisManager.disconnect();
       clearTimeout(shutdownTimeout);
       this.logShutdownComplete();
       throw new InternalServerError('Graceful shutdown completed');

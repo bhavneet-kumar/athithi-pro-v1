@@ -1,6 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+import { Types } from 'mongoose';
+
 import { BATCH_SIZE, EXPORT_LIMIT } from '../../shared/constant/lead';
 import { Counter } from '../../shared/models/counter.model';
 import { ILead, Lead } from '../../shared/models/lead.model';
@@ -9,8 +11,9 @@ import { aiScoreCalculator } from '../../shared/utils/aiScore';
 import { BadRequestError, CustomError, InternalServerError, NotFoundError } from '../../shared/utils/customError';
 import { LEAD_NUMBER_PAD_LENGTH } from '../../types/enum/lead';
 
-import { ILeadCreate, ILeadFilter, ILeadUpdate } from './lead.interface';
+import { ILeadCreate, ILeadFilter, ILeadImport, ILeadUpdate } from './lead.interface';
 import { cleanupFile, getExportDir, getLeadExportFields, writeCsvHeader, writeCsvRows } from './lead.utils';
+import { leadStreamsService } from './leadStreams.service';
 
 export class LeadService extends BaseService<ILead> {
   private readonly UNKNOWN_ERROR = 'Unknown error';
@@ -274,6 +277,69 @@ export class LeadService extends BaseService<ILead> {
       cleanupFile(filePath);
       throw new InternalServerError(
         `Lead export failed: ${error instanceof Error ? error.message : this.UNKNOWN_ERROR}`,
+      );
+    }
+  }
+
+  async importLeads(
+    agencyId: string,
+    data: ILeadImport,
+    agencyCode: string,
+  ): Promise<{ importId: string; message: string }> {
+    try {
+      // Queue the import job using Redis streams
+      // extract audit fields from body
+      const { audit, ...restData } = data;
+      const auditFields = {
+        createdBy: new Types.ObjectId(audit.createdBy),
+        updatedBy: new Types.ObjectId(audit.updatedBy),
+        deletedBy: new Types.ObjectId(audit.deletedBy),
+        createdAt: audit.createdAt,
+        updatedAt: audit.updatedAt,
+        deletedAt: audit.deletedAt,
+        isDeleted: audit.isDeleted,
+      };
+
+      // append these fields to all the objects in the leads array
+      const leadsWithAudit = restData.leads.map((lead) => ({
+        ...lead,
+        ...auditFields,
+      }));
+      const entryId = await leadStreamsService.queueImportJob({ ...data, leads: leadsWithAudit }, agencyId, agencyCode);
+
+      return {
+        importId: data.importId,
+        message: `Import job queued successfully. Entry ID: ${entryId}`,
+      };
+    } catch (error) {
+      throw new InternalServerError(
+        `Lead import failed: ${error instanceof Error ? error.message : this.UNKNOWN_ERROR}`,
+      );
+    }
+  }
+
+  async getImportStatus(importId: string): Promise<{
+    importId: string;
+    agencyId: string;
+    agencyCode: string;
+    status: 'pending' | 'processing' | 'completed' | 'failed';
+    progress: {
+      total: number;
+      processed: number;
+      successful: number;
+      failed: number;
+      errors: Array<{ index: number; error: string }>;
+    };
+    createdAt: Date;
+    updatedAt: Date;
+  } | null> {
+    try {
+      return await leadStreamsService.getImportStatus(importId);
+      // return all cache keys
+      // return await redisManager.cache.get(`import:job:${importId}`);
+    } catch (error) {
+      throw new InternalServerError(
+        `Failed to get import status: ${error instanceof Error ? error.message : this.UNKNOWN_ERROR}`,
       );
     }
   }

@@ -191,6 +191,41 @@ export const leadValidator = {
   changeStatusSchema: z
     .object({
       status: z.nativeEnum(LeadStatus),
+      updatedAt: z.date().optional(),
+      updatedBy: objectIdSchema.nullable().optional(),
+      isDeleted: z.boolean().optional(),
+      deletedAt: z.date().optional(),
+      deletedBy: objectIdSchema.nullable().optional(),
+    })
+    .strict(),
+
+  importSchema: z
+    .object({
+      importId: z.string().min(1, 'Import ID is required'),
+      leads: z.array(
+        z.object({
+          fullName: z.string().min(1, 'Full name is required'),
+          email: z.string().email('Invalid email format'),
+          phone: z.string().min(1, 'Phone number is required'),
+          alternatePhone: z.string().optional(),
+          status: z.nativeEnum(LeadStatus).optional(),
+          source: z.nativeEnum(LeadSource).optional(),
+          priority: z.string().optional(),
+          travelDetails: travelDetailsSchema,
+          tags: z.array(z.string()).optional(),
+          notes: z.string().optional(),
+        }),
+      ),
+      audit: z.object({
+        updatedAt: z.date().optional(),
+        updatedBy: objectIdSchema.nullable().optional(),
+        isDeleted: z.boolean().optional(),
+        deletedAt: z.date().optional(),
+        deletedBy: objectIdSchema.nullable().optional(),
+        createdAt: z.date().optional(),
+        createdBy: objectIdSchema.nullable().optional(),
+        version: z.number().optional(),
+      }),
     })
     .strict(),
 };

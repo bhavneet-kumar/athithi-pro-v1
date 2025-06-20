@@ -1,5 +1,6 @@
 import { Types } from 'mongoose';
 
+import { AuditBaseFields } from '../../shared/middlewares/audit.middleware';
 import { ILead } from '../../shared/models/lead.model';
 import { LeadSource, LeadStatus } from '../../types/enum/lead';
 
@@ -26,6 +27,45 @@ export interface ILeadFilter {
   limit?: number;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
+}
+
+export interface ILeadImport extends AuditBaseFields {
+  leads: Array<{
+    fullName: string;
+    email: string;
+    phone: string;
+    alternatePhone?: string;
+    status?: LeadStatus;
+    source?: LeadSource;
+    priority?: string;
+    travelDetails?: {
+      destination?: string;
+      departureDate?: Date;
+      returnDate?: Date;
+      travelers?: {
+        adults?: number;
+        children?: number;
+        infants?: number;
+      };
+      budget?: {
+        min?: number;
+        max?: number;
+        value?: number;
+        currency?: string;
+      };
+      packageType?: string;
+      preferences?: {
+        accommodation?: string;
+        transport?: string;
+        mealPreference?: string;
+        specialRequests?: string;
+      };
+    };
+    tags?: string[];
+    notes?: string;
+  }>;
+  importId: string;
+  audit: AuditBaseFields;
 }
 
 export interface ILeadResponse {

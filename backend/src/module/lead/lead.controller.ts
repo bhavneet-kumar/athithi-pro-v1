@@ -6,6 +6,7 @@ import { CreatedSuccess, NoContentSuccess, OkSuccess } from '../../shared/utils/
 
 import { ILeadFilter } from './lead.interface';
 import { leadService } from './lead.service';
+import { cleanupFile } from './lead.utils';
 
 /**
  * Authentication Controller Class
@@ -78,7 +79,29 @@ export class LeadController {
   async exportLeads(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const filePath = await leadService.exportLeads(req.user.agency as string, req.query);
+      setTimeout(() => {
+        cleanupFile(filePath);
+        // eslint-disable-next-line @typescript-eslint/no-magic-numbers
+      }, 1000);
       res.download(filePath);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async importLeads(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const result = await leadService.importLeads(req.user.agency as string, req.body, req.user.agencyCode as string);
+      res.customSuccess(new OkSuccess(result, 'Import job queued successfully.'));
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getImportStatus(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const status = await leadService.getImportStatus(req.params.importId);
+      res.customSuccess(new OkSuccess(status, 'Import status fetched successfully.'));
     } catch (error) {
       next(error);
     }

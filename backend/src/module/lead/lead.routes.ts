@@ -142,6 +142,21 @@ router.put(
   leadController.changeStatus,
 );
 
+router.post(
+  '/import',
+  passport.authenticate('jwt', { session: false }),
+  checkPermission('leads', 'create'),
+  validateBody(leadValidator.importSchema),
+  leadController.importLeads,
+);
+
+router.get(
+  '/import/:importId/status',
+  passport.authenticate('jwt', { session: false }),
+  checkPermission('leads', 'read'),
+  leadController.getImportStatus,
+);
+
 // TODO: May add a partial update route as well in future if the need arises
 
 export const leadRoutes = router;

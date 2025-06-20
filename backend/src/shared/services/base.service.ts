@@ -1,6 +1,7 @@
-import { Document, Model, FilterQuery, UpdateQuery, QueryOptions } from 'mongoose';
+import { ClientSession, Document, FilterQuery, Model, QueryOptions, UpdateQuery } from 'mongoose';
 
-import { NotFoundError, BadRequestError, InternalServerError, BusinessError } from '../utils/customError';
+import { PluginMetaForSave } from '../middlewares/changeLog.middleware';
+import { BadRequestError, BusinessError, InternalServerError, NotFoundError } from '../utils/customError';
 
 // Constants for magic numbers
 const PAGINATION_DEFAULT_LIMIT = 10;
@@ -23,12 +24,19 @@ export abstract class BaseService<T extends Document> {
   /**
    * Create a new document
    * @param data - Data to create the document
+   * @param options - Options for the create operation
+   * @param options.session - Session for the create operation
    * @returns Created document
    */
-  async create(data: Partial<T>): Promise<T> {
+  async create(data: Partial<T> & PluginMetaForSave, options?: { session?: ClientSession }): Promise<T> {
     try {
       const document = new this.model(data);
-      return await document.save();
+      document.$locals = {
+        req: data?.$req,
+        session: data?.$session,
+        oldDoc: data?.$oldDoc,
+      };
+      return await document.save({ session: options?.session });
     } catch (error) {
       this.handleDatabaseError(error as unknown, 'create');
     }

@@ -1,7 +1,11 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+import { Request } from 'express';
+import mongoose from 'mongoose';
+
 import { BATCH_SIZE, EXPORT_LIMIT } from '../../shared/constant/lead';
+import { PluginMetaForSave } from '../../shared/middlewares/changeLog.middleware';
 import { Counter } from '../../shared/models/counter.model';
 import { ILead, Lead } from '../../shared/models/lead.model';
 import { BaseService } from '../../shared/services/base.service';
@@ -19,7 +23,9 @@ export class LeadService extends BaseService<ILead> {
     super(Lead, 'Lead');
   }
 
-  async createLead(data: ILeadCreate, agencyCode: string): Promise<ILead & { agencyCode: string }> {
+  async createLead(data: ILeadCreate, agencyCode: string, req?: Request): Promise<ILead & { agencyCode: string }> {
+    const session = await mongoose.startSession();
+    session.startTransaction();
     try {
       // Ensure aiScore object exists
       if (!data.aiScore) {
@@ -35,17 +41,27 @@ export class LeadService extends BaseService<ILead> {
       const counter = await Counter.findOneAndUpdate(
         { name: counterName },
         { $inc: { value: 1 } },
-        { new: true, upsert: true },
+        { new: true, upsert: true, session },
       );
 
       const leadNumber = `${agencyCode}-${currentYear}-${counter.value.toString().padStart(LEAD_NUMBER_PAD_LENGTH, '0')}`;
 
-      return (await this.create({ ...data, leadNumber })) as ILead & { agencyCode: string };
+      const dataToCreate = { ...data, leadNumber, $req: req?.toString(), $session: session, $oldDoc: null };
+
+      const createdLead = await this.create(dataToCreate as unknown as ILead & PluginMetaForSave, {
+        session,
+      });
+
+      await session.commitTransaction();
+      return createdLead as unknown as ILead & { agencyCode: string };
     } catch (error) {
+      await session.abortTransaction();
       if (error instanceof CustomError) {
         throw error;
       }
       throw new InternalServerError(`Lead creation failed: ${error.message}`);
+    } finally {
+      await session.endSession();
     }
   }
 
@@ -72,9 +88,9 @@ export class LeadService extends BaseService<ILead> {
 
   async getAll(query: ILeadFilter, agencyId: string): Promise<{ data: ILead[]; total: number }> {
     try {
-      const { limit, page, sortBy, sortOrder, ...filterQuery } = query;
+      const { limit, page, sortBy, sortOrder, search, ...filterQuery } = query;
       const skip = (page - 1) * limit;
-      const searchQuery = query.search ? { $text: { $search: query.search as string } } : {};
+      const searchQuery = search ? { $text: { $search: search as string } } : {};
 
       const sort = this.getSortOptions(sortBy, sortOrder);
 

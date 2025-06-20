@@ -175,8 +175,16 @@ export const leadValidator = {
         .string()
         .transform((str) => new Date(str))
         .optional(),
-      page: z.number().min(1).optional(),
-      limit: z.number().min(1).optional(),
+      page: z
+        .string()
+        .transform((val) => Number.parseInt(val, 10))
+        .pipe(z.number().min(1))
+        .optional(),
+      limit: z
+        .string()
+        .transform((val) => Number.parseInt(val, 10))
+        .pipe(z.number().min(1))
+        .optional(),
       sortBy: z.string().optional(),
       sortOrder: z.enum(['asc', 'desc']).optional(),
     })
@@ -191,6 +199,11 @@ export const leadValidator = {
   changeStatusSchema: z
     .object({
       status: z.nativeEnum(LeadStatus),
+      updatedAt: z.date().optional(),
+      updatedBy: objectIdSchema.nullable().optional(),
+      isDeleted: z.boolean().optional(),
+      deletedAt: z.date().optional(),
+      deletedBy: objectIdSchema.nullable().optional(),
     })
     .strict(),
 };

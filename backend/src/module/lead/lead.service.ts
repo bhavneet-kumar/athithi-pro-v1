@@ -23,7 +23,6 @@ export class LeadService extends BaseService<ILead> {
     super(Lead, 'Lead');
   }
 
-  // eslint-disable-next-line max-statements
   async createLead(data: ILeadCreate, agencyCode: string, req?: Request): Promise<ILead & { agencyCode: string }> {
     const session = await mongoose.startSession();
     session.startTransaction();

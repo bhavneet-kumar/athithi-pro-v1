@@ -100,8 +100,8 @@ export class LeadController {
 
   async getImportStatus(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const status = await leadService.getImportStatus(req.params.importId);
-      res.customSuccess(new OkSuccess(status, 'Import status fetched successfully.'));
+      // await leadService.getImportStatus(req.params.importId);
+      res.customSuccess(new OkSuccess(null, 'Import status fetched successfully.'));
     } catch (error) {
       next(error);
     }

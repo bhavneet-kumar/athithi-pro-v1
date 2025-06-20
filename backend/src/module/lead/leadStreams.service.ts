@@ -10,12 +10,7 @@ import { LEAD_NUMBER_PAD_LENGTH, LeadSource, LeadStatus } from '../../types/enum
 import { ILeadImport } from './lead.interface';
 
 interface ImportJob {
-  importId: string;
-  agencyId: string;
-  agencyCode: string;
-  leads: Record<string, unknown>[];
-  createdBy: Types.ObjectId;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
+  batch: Record<string, unknown>[];
   progress: {
     total: number;
     processed: number;
@@ -23,16 +18,18 @@ interface ImportJob {
     failed: number;
     errors: Array<{ index: number; error: string }>;
   };
-  createdAt: Date;
-  updatedAt: Date;
+  importId: string;
+  agencyId: string;
+  agencyCode: string;
+  batchIndex: number;
+  timestamp: string;
 }
 
 // Constants
 const BATCH_SIZE = 50;
-const CACHE_TTL = 3600; // 1 hour
 const BLOCK_TIMEOUT = 5000; // 5 seconds
-const BATCH_DELAY = 100; // 100ms
 const SHUTDOWN_TIMEOUT = 5000; // 5 seconds
+const MESSAGE_READ_COUNT = 1; // read only one message at a time
 
 export class LeadStreamsService {
   private readonly STREAM_KEY = 'lead:imports';
@@ -56,40 +53,36 @@ export class LeadStreamsService {
 
   async queueImportJob(importData: ILeadImport, agencyId: string, agencyCode: string): Promise<string> {
     try {
-      const importJob: ImportJob = {
-        importId: importData.importId,
-        agencyId,
-        agencyCode,
-        leads: importData.leads,
-        createdBy: new Types.ObjectId(importData.createdBy),
-        status: 'pending',
-        progress: {
-          total: importData.leads.length,
-          processed: 0,
-          successful: 0,
-          failed: 0,
-          errors: [],
-        },
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+      const jobId = importData.importId;
+      const totalLeads = importData.leads.length;
 
-      const streamEntry = {
-        job: JSON.stringify(importJob),
-        timestamp: Date.now().toString(),
-      };
+      const jobIds: Record<number, string> = {};
 
-      console.log('streamEntry', streamEntry);
-      const entryId = await redisManager.streams.addStreamEntry(this.STREAM_KEY, streamEntry);
+      // Create batches and store them separately
+      for (let i = 0; i < totalLeads; i += BATCH_SIZE) {
+        const batch = importData.leads.slice(i, i + BATCH_SIZE);
 
-      console.log('entryId', entryId);
+        // push to stream
+        const entry = await redisManager.streams.addStreamEntry(this.STREAM_KEY, {
+          batch,
+          agencyId,
+          agencyCode,
+          progress: {
+            total: batch.length,
+            processed: 0,
+            successful: 0,
+            failed: 0,
+            errors: [],
+          },
+          importId: jobId,
+          batchIndex: i,
+          timestamp: Date.now().toString(),
+        });
 
-      // Store job metadata in Redis for tracking
-      await redisManager.cache.set(`import:job:${importData.importId}`, JSON.stringify(importJob), CACHE_TTL);
+        jobIds[i as keyof typeof jobIds] = entry;
+      }
 
-      console.log('importJob', importJob);
-
-      return entryId;
+      return jobId;
     } catch (error) {
       throw new InternalServerError(`Failed to queue import job: ${error.message}`);
     }
@@ -102,11 +95,9 @@ export class LeadStreamsService {
           this.GROUP_NAME,
           this.CONSUMER_NAME,
           this.STREAM_KEY,
-          1,
+          MESSAGE_READ_COUNT,
           BLOCK_TIMEOUT,
         );
-
-        console.log('entries', entries);
 
         if (entries.length === 0) {
           continue;
@@ -114,16 +105,9 @@ export class LeadStreamsService {
 
         for (const entry of entries) {
           try {
-            console.log('entry', entry);
-            const jobData =
-              typeof entry.data.job === 'string'
-                ? (JSON.parse(entry.data.job) as ImportJob)
-                : (entry.data.job as ImportJob);
-            console.log('jobData', jobData);
-
+            const jobData = entry.data as unknown as ImportJob;
             await this.processImportJob(jobData);
 
-            console.log('entry', entry);
             // Acknowledge the processed entry
             await redisManager.streams.ackStreamEntries(this.STREAM_KEY, this.GROUP_NAME, [entry.id]);
           } catch (error) {
@@ -140,63 +124,26 @@ export class LeadStreamsService {
   }
 
   private async processImportJob(job: ImportJob): Promise<void> {
-    try {
-      await this.updateJobStatusToProcessing(job);
-      await this.processLeadBatches(job);
-      await this.finalizeJob(job);
-    } catch (error) {
-      await this.markJobAsFailed(job);
-      throw error;
-    }
-  }
-
-  private async updateJobStatusToProcessing(job: ImportJob): Promise<void> {
-    job.status = 'processing';
-    job.updatedAt = new Date();
-    await this.updateJobStatus(job);
+    await this.processLeadBatches(job);
   }
 
   private async processLeadBatches(job: ImportJob): Promise<void> {
-    const { leads, agencyId, agencyCode, createdBy } = job;
+    const { batch, agencyId, agencyCode, progress } = job;
 
-    for (let i = 0; i < leads.length; i += BATCH_SIZE) {
-      const batch = leads.slice(i, i + BATCH_SIZE);
-      const batchResults = await this.processLeadBatch(batch, agencyId, agencyCode, createdBy);
+    // as we already pushing the batch to stream, we can process it here
+    const batchResults = await this.processLeadBatch(batch, agencyId, agencyCode);
 
-      const { progress } = job;
-      progress.processed += batch.length;
-      progress.successful += batchResults.successful.length;
-      progress.failed += batchResults.failed;
-      progress.errors.push(...batchResults.errors);
-
-      job.updatedAt = new Date();
-      await this.updateJobStatus(job);
-
-      await new Promise((resolve) => setTimeout(resolve, BATCH_DELAY));
-    }
-  }
-
-  private async finalizeJob(job: ImportJob): Promise<void> {
-    job.status = 'completed';
-    job.updatedAt = new Date();
-    await this.updateJobStatus(job);
-
-    console.log(
-      `Import job ${job.importId} completed: ${job.progress.successful} successful, ${job.progress.failed} failed`,
-    );
-  }
-
-  private async markJobAsFailed(job: ImportJob): Promise<void> {
-    job.status = 'failed';
-    job.updatedAt = new Date();
-    await this.updateJobStatus(job);
+    // update progress
+    progress.processed += batch.length;
+    progress.successful += batchResults.successful.length;
+    progress.failed += batchResults.failed;
+    progress.errors.push(...batchResults.errors);
   }
 
   private async processLeadBatch(
     leads: Record<string, unknown>[],
     agencyId: string,
     agencyCode: string,
-    createdBy: Types.ObjectId,
   ): Promise<{
     successful: ILead[];
     failed: number;
@@ -207,7 +154,7 @@ export class LeadStreamsService {
 
     try {
       // Prepare all leads for bulk insertion
-      const leadsToInsert = await this.prepareLeadsForBulkInsertion(leads, agencyId, agencyCode, createdBy);
+      const leadsToInsert = await this.prepareLeadsForBulkInsertion(leads, agencyId, agencyCode);
 
       // Perform bulk insertion
       const insertedLeads = await Lead.insertMany(leadsToInsert, {
@@ -268,7 +215,6 @@ export class LeadStreamsService {
     leads: Record<string, unknown>[],
     agencyId: string,
     agencyCode: string,
-    createdBy: Types.ObjectId,
   ): Promise<Partial<ILead>[]> {
     const currentYear = new Date().getFullYear();
     const counterName = `leadNumber_${agencyId}_${currentYear}`;
@@ -287,7 +233,6 @@ export class LeadStreamsService {
         leadData,
         agencyId,
         agencyCode,
-        createdBy,
         currentYear,
         counterValue: startValue + index,
       }),
@@ -298,16 +243,16 @@ export class LeadStreamsService {
     leadData: Record<string, unknown>;
     agencyId: string;
     agencyCode: string;
-    createdBy: Types.ObjectId;
     currentYear: number;
     counterValue: number;
   }): Partial<ILead> {
-    const { leadData, agencyId, agencyCode, createdBy, currentYear, counterValue } = params;
+    const { leadData, agencyId, agencyCode, currentYear, counterValue } = params;
     const leadNumber = `${agencyCode}-${currentYear}-${counterValue.toString().padStart(LEAD_NUMBER_PAD_LENGTH, '0')}`;
 
     const { fullName, email, phone, alternatePhone, status, source, priority, travelDetails, tags, notes } = leadData;
 
     return {
+      ...leadData,
       agencyId: new Types.ObjectId(agencyId),
       leadNumber,
       fullName: fullName as string,
@@ -324,26 +269,13 @@ export class LeadStreamsService {
         value: Number(aiScoreCalculator.calculateScore(leadData as unknown as ILead)),
         lastCalculated: new Date(),
       },
-      audit: {
-        createdAt: new Date(),
-        createdBy: new Types.ObjectId(createdBy),
-        updatedAt: new Date(),
-        updatedBy: new Types.ObjectId(createdBy),
-        version: 1,
-        isDeleted: false,
-      },
     };
-  }
-
-  private async updateJobStatus(job: ImportJob): Promise<void> {
-    await redisManager.cache.set(`import:job:${job.importId}`, JSON.stringify(job), CACHE_TTL);
   }
 
   async getImportStatus(importId: string): Promise<ImportJob | null> {
     try {
-      const jobData = await redisManager.cache.get(`import:job:${importId}`);
-
-      return jobData as ImportJob | null;
+      console.log('importId', importId);
+      return null;
     } catch (error) {
       console.error('Error getting import status:', error);
       return null;

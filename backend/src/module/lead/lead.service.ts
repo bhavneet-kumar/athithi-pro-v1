@@ -303,7 +303,10 @@ export class LeadService extends BaseService<ILead> {
       // append these fields to all the objects in the leads array
       const leadsWithAudit = restData.leads.map((lead) => ({
         ...lead,
-        ...auditFields,
+        audit: {
+          ...auditFields,
+          version: 1,
+        },
       }));
       const entryId = await leadStreamsService.queueImportJob({ ...data, leads: leadsWithAudit }, agencyId, agencyCode);
 
@@ -318,25 +321,11 @@ export class LeadService extends BaseService<ILead> {
     }
   }
 
-  async getImportStatus(importId: string): Promise<{
-    importId: string;
-    agencyId: string;
-    agencyCode: string;
-    status: 'pending' | 'processing' | 'completed' | 'failed';
-    progress: {
-      total: number;
-      processed: number;
-      successful: number;
-      failed: number;
-      errors: Array<{ index: number; error: string }>;
-    };
-    createdAt: Date;
-    updatedAt: Date;
-  } | null> {
+  async getImportStatus(importId: string): Promise<null> {
     try {
-      return await leadStreamsService.getImportStatus(importId);
-      // return all cache keys
-      // return await redisManager.cache.get(`import:job:${importId}`);
+      console.log('importId', importId);
+      // return await leadStreamsService.getImportStatus(importId);
+      return null;
     } catch (error) {
       throw new InternalServerError(
         `Failed to get import status: ${error instanceof Error ? error.message : this.UNKNOWN_ERROR}`,

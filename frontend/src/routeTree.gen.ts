@@ -10,31 +10,39 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteImport } from './routes/_auth'
+import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as CrmIndexRouteImport } from './routes/crm/index'
-import { Route as CrmDashboardRouteImport } from './routes/crm/dashboard'
-import { Route as CrmTasksIndexRouteImport } from './routes/crm/tasks/index'
-import { Route as CrmSegmentsIndexRouteImport } from './routes/crm/segments/index'
-import { Route as CrmLeadsIndexRouteImport } from './routes/crm/leads/index'
-import { Route as CrmInsightsIndexRouteImport } from './routes/crm/insights/index'
-import { Route as CrmCommunicationIndexRouteImport } from './routes/crm/communication/index'
-import { Route as CrmBookingsIndexRouteImport } from './routes/crm/bookings/index'
+import { Route as AuthResetPasswordIndexRouteImport } from './routes/_auth/reset-password/index'
 import { Route as AuthRegistrationIndexRouteImport } from './routes/_auth/registration/index'
 import { Route as AuthLoginIndexRouteImport } from './routes/_auth/login/index'
 import { Route as AuthForgotPasswordIndexRouteImport } from './routes/_auth/forgot-password/index'
 import { Route as AuthConfirmMailIndexRouteImport } from './routes/_auth/confirm-mail/index'
-import { Route as CrmTasksNewRouteImport } from './routes/crm/tasks/new'
-import { Route as CrmLeadsNewRouteImport } from './routes/crm/leads/new'
-import { Route as CrmLeadsIdRouteImport } from './routes/crm/leads/$id'
-import { Route as CrmCommunicationNewRouteImport } from './routes/crm/communication/new'
-import { Route as CrmBookingsNewRouteImport } from './routes/crm/bookings/new'
-import { Route as CrmTasksNewLeadIdRouteImport } from './routes/crm/tasks/new.$leadId'
-import { Route as CrmLeadsIdEditRouteImport } from './routes/crm/leads/$id.edit'
-import { Route as CrmCommunicationNewLeadIdRouteImport } from './routes/crm/communication/new.$leadId'
-import { Route as CrmBookingsNewLeadIdRouteImport } from './routes/crm/bookings/new.$leadId'
+import { Route as AppCrmIndexRouteImport } from './routes/_app/crm/index'
+import { Route as AuthResetPasswordTokenRouteImport } from './routes/_auth/reset-password/$token'
+import { Route as AuthConfirmEmailTokenRouteImport } from './routes/_auth/confirm-email/$token'
+import { Route as AppCrmDashboardRouteImport } from './routes/_app/crm/dashboard'
+import { Route as AppCrmTasksIndexRouteImport } from './routes/_app/crm/tasks/index'
+import { Route as AppCrmSegmentsIndexRouteImport } from './routes/_app/crm/segments/index'
+import { Route as AppCrmLeadsIndexRouteImport } from './routes/_app/crm/leads/index'
+import { Route as AppCrmInsightsIndexRouteImport } from './routes/_app/crm/insights/index'
+import { Route as AppCrmCommunicationIndexRouteImport } from './routes/_app/crm/communication/index'
+import { Route as AppCrmBookingsIndexRouteImport } from './routes/_app/crm/bookings/index'
+import { Route as AppCrmTasksNewRouteImport } from './routes/_app/crm/tasks/new'
+import { Route as AppCrmLeadsNewRouteImport } from './routes/_app/crm/leads/new'
+import { Route as AppCrmLeadsIdRouteImport } from './routes/_app/crm/leads/$id'
+import { Route as AppCrmCommunicationNewRouteImport } from './routes/_app/crm/communication/new'
+import { Route as AppCrmBookingsNewRouteImport } from './routes/_app/crm/bookings/new'
+import { Route as AppCrmTasksNewLeadIdRouteImport } from './routes/_app/crm/tasks/new.$leadId'
+import { Route as AppCrmLeadsEditIdRouteImport } from './routes/_app/crm/leads/edit.$id'
+import { Route as AppCrmCommunicationNewLeadIdRouteImport } from './routes/_app/crm/communication/new.$leadId'
+import { Route as AppCrmBookingsNewLeadIdRouteImport } from './routes/_app/crm/bookings/new.$leadId'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/_auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppRoute = AppRouteImport.update({
+  id: '/_app',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -42,45 +50,10 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CrmIndexRoute = CrmIndexRouteImport.update({
-  id: '/crm/',
-  path: '/crm/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CrmDashboardRoute = CrmDashboardRouteImport.update({
-  id: '/crm/dashboard',
-  path: '/crm/dashboard',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CrmTasksIndexRoute = CrmTasksIndexRouteImport.update({
-  id: '/crm/tasks/',
-  path: '/crm/tasks/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CrmSegmentsIndexRoute = CrmSegmentsIndexRouteImport.update({
-  id: '/crm/segments/',
-  path: '/crm/segments/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CrmLeadsIndexRoute = CrmLeadsIndexRouteImport.update({
-  id: '/crm/leads/',
-  path: '/crm/leads/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CrmInsightsIndexRoute = CrmInsightsIndexRouteImport.update({
-  id: '/crm/insights/',
-  path: '/crm/insights/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CrmCommunicationIndexRoute = CrmCommunicationIndexRouteImport.update({
-  id: '/crm/communication/',
-  path: '/crm/communication/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CrmBookingsIndexRoute = CrmBookingsIndexRouteImport.update({
-  id: '/crm/bookings/',
-  path: '/crm/bookings/',
-  getParentRoute: () => rootRouteImport,
+const AuthResetPasswordIndexRoute = AuthResetPasswordIndexRouteImport.update({
+  id: '/reset-password/',
+  path: '/reset-password/',
+  getParentRoute: () => AuthRoute,
 } as any)
 const AuthRegistrationIndexRoute = AuthRegistrationIndexRouteImport.update({
   id: '/registration/',
@@ -102,128 +75,189 @@ const AuthConfirmMailIndexRoute = AuthConfirmMailIndexRouteImport.update({
   path: '/confirm-mail/',
   getParentRoute: () => AuthRoute,
 } as any)
-const CrmTasksNewRoute = CrmTasksNewRouteImport.update({
+const AppCrmIndexRoute = AppCrmIndexRouteImport.update({
+  id: '/crm/',
+  path: '/crm/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AuthResetPasswordTokenRoute = AuthResetPasswordTokenRouteImport.update({
+  id: '/reset-password/$token',
+  path: '/reset-password/$token',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthConfirmEmailTokenRoute = AuthConfirmEmailTokenRouteImport.update({
+  id: '/confirm-email/$token',
+  path: '/confirm-email/$token',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AppCrmDashboardRoute = AppCrmDashboardRouteImport.update({
+  id: '/crm/dashboard',
+  path: '/crm/dashboard',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCrmTasksIndexRoute = AppCrmTasksIndexRouteImport.update({
+  id: '/crm/tasks/',
+  path: '/crm/tasks/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCrmSegmentsIndexRoute = AppCrmSegmentsIndexRouteImport.update({
+  id: '/crm/segments/',
+  path: '/crm/segments/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCrmLeadsIndexRoute = AppCrmLeadsIndexRouteImport.update({
+  id: '/crm/leads/',
+  path: '/crm/leads/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCrmInsightsIndexRoute = AppCrmInsightsIndexRouteImport.update({
+  id: '/crm/insights/',
+  path: '/crm/insights/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCrmCommunicationIndexRoute =
+  AppCrmCommunicationIndexRouteImport.update({
+    id: '/crm/communication/',
+    path: '/crm/communication/',
+    getParentRoute: () => AppRoute,
+  } as any)
+const AppCrmBookingsIndexRoute = AppCrmBookingsIndexRouteImport.update({
+  id: '/crm/bookings/',
+  path: '/crm/bookings/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCrmTasksNewRoute = AppCrmTasksNewRouteImport.update({
   id: '/crm/tasks/new',
   path: '/crm/tasks/new',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AppRoute,
 } as any)
-const CrmLeadsNewRoute = CrmLeadsNewRouteImport.update({
+const AppCrmLeadsNewRoute = AppCrmLeadsNewRouteImport.update({
   id: '/crm/leads/new',
   path: '/crm/leads/new',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AppRoute,
 } as any)
-const CrmLeadsIdRoute = CrmLeadsIdRouteImport.update({
+const AppCrmLeadsIdRoute = AppCrmLeadsIdRouteImport.update({
   id: '/crm/leads/$id',
   path: '/crm/leads/$id',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AppRoute,
 } as any)
-const CrmCommunicationNewRoute = CrmCommunicationNewRouteImport.update({
+const AppCrmCommunicationNewRoute = AppCrmCommunicationNewRouteImport.update({
   id: '/crm/communication/new',
   path: '/crm/communication/new',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AppRoute,
 } as any)
-const CrmBookingsNewRoute = CrmBookingsNewRouteImport.update({
+const AppCrmBookingsNewRoute = AppCrmBookingsNewRouteImport.update({
   id: '/crm/bookings/new',
   path: '/crm/bookings/new',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AppRoute,
 } as any)
-const CrmTasksNewLeadIdRoute = CrmTasksNewLeadIdRouteImport.update({
+const AppCrmTasksNewLeadIdRoute = AppCrmTasksNewLeadIdRouteImport.update({
   id: '/$leadId',
   path: '/$leadId',
-  getParentRoute: () => CrmTasksNewRoute,
+  getParentRoute: () => AppCrmTasksNewRoute,
 } as any)
-const CrmLeadsIdEditRoute = CrmLeadsIdEditRouteImport.update({
-  id: '/edit',
-  path: '/edit',
-  getParentRoute: () => CrmLeadsIdRoute,
+const AppCrmLeadsEditIdRoute = AppCrmLeadsEditIdRouteImport.update({
+  id: '/crm/leads/edit/$id',
+  path: '/crm/leads/edit/$id',
+  getParentRoute: () => AppRoute,
 } as any)
-const CrmCommunicationNewLeadIdRoute =
-  CrmCommunicationNewLeadIdRouteImport.update({
+const AppCrmCommunicationNewLeadIdRoute =
+  AppCrmCommunicationNewLeadIdRouteImport.update({
     id: '/$leadId',
     path: '/$leadId',
-    getParentRoute: () => CrmCommunicationNewRoute,
+    getParentRoute: () => AppCrmCommunicationNewRoute,
   } as any)
-const CrmBookingsNewLeadIdRoute = CrmBookingsNewLeadIdRouteImport.update({
+const AppCrmBookingsNewLeadIdRoute = AppCrmBookingsNewLeadIdRouteImport.update({
   id: '/$leadId',
   path: '/$leadId',
-  getParentRoute: () => CrmBookingsNewRoute,
+  getParentRoute: () => AppCrmBookingsNewRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '': typeof AuthRouteWithChildren
-  '/crm/dashboard': typeof CrmDashboardRoute
-  '/crm': typeof CrmIndexRoute
-  '/crm/bookings/new': typeof CrmBookingsNewRouteWithChildren
-  '/crm/communication/new': typeof CrmCommunicationNewRouteWithChildren
-  '/crm/leads/$id': typeof CrmLeadsIdRouteWithChildren
-  '/crm/leads/new': typeof CrmLeadsNewRoute
-  '/crm/tasks/new': typeof CrmTasksNewRouteWithChildren
+  '/crm/dashboard': typeof AppCrmDashboardRoute
+  '/confirm-email/$token': typeof AuthConfirmEmailTokenRoute
+  '/reset-password/$token': typeof AuthResetPasswordTokenRoute
+  '/crm': typeof AppCrmIndexRoute
   '/confirm-mail': typeof AuthConfirmMailIndexRoute
   '/forgot-password': typeof AuthForgotPasswordIndexRoute
   '/login': typeof AuthLoginIndexRoute
   '/registration': typeof AuthRegistrationIndexRoute
-  '/crm/bookings': typeof CrmBookingsIndexRoute
-  '/crm/communication': typeof CrmCommunicationIndexRoute
-  '/crm/insights': typeof CrmInsightsIndexRoute
-  '/crm/leads': typeof CrmLeadsIndexRoute
-  '/crm/segments': typeof CrmSegmentsIndexRoute
-  '/crm/tasks': typeof CrmTasksIndexRoute
-  '/crm/bookings/new/$leadId': typeof CrmBookingsNewLeadIdRoute
-  '/crm/communication/new/$leadId': typeof CrmCommunicationNewLeadIdRoute
-  '/crm/leads/$id/edit': typeof CrmLeadsIdEditRoute
-  '/crm/tasks/new/$leadId': typeof CrmTasksNewLeadIdRoute
+  '/reset-password': typeof AuthResetPasswordIndexRoute
+  '/crm/bookings/new': typeof AppCrmBookingsNewRouteWithChildren
+  '/crm/communication/new': typeof AppCrmCommunicationNewRouteWithChildren
+  '/crm/leads/$id': typeof AppCrmLeadsIdRoute
+  '/crm/leads/new': typeof AppCrmLeadsNewRoute
+  '/crm/tasks/new': typeof AppCrmTasksNewRouteWithChildren
+  '/crm/bookings': typeof AppCrmBookingsIndexRoute
+  '/crm/communication': typeof AppCrmCommunicationIndexRoute
+  '/crm/insights': typeof AppCrmInsightsIndexRoute
+  '/crm/leads': typeof AppCrmLeadsIndexRoute
+  '/crm/segments': typeof AppCrmSegmentsIndexRoute
+  '/crm/tasks': typeof AppCrmTasksIndexRoute
+  '/crm/bookings/new/$leadId': typeof AppCrmBookingsNewLeadIdRoute
+  '/crm/communication/new/$leadId': typeof AppCrmCommunicationNewLeadIdRoute
+  '/crm/leads/edit/$id': typeof AppCrmLeadsEditIdRoute
+  '/crm/tasks/new/$leadId': typeof AppCrmTasksNewLeadIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '': typeof AuthRouteWithChildren
-  '/crm/dashboard': typeof CrmDashboardRoute
-  '/crm': typeof CrmIndexRoute
-  '/crm/bookings/new': typeof CrmBookingsNewRouteWithChildren
-  '/crm/communication/new': typeof CrmCommunicationNewRouteWithChildren
-  '/crm/leads/$id': typeof CrmLeadsIdRouteWithChildren
-  '/crm/leads/new': typeof CrmLeadsNewRoute
-  '/crm/tasks/new': typeof CrmTasksNewRouteWithChildren
+  '/crm/dashboard': typeof AppCrmDashboardRoute
+  '/confirm-email/$token': typeof AuthConfirmEmailTokenRoute
+  '/reset-password/$token': typeof AuthResetPasswordTokenRoute
+  '/crm': typeof AppCrmIndexRoute
   '/confirm-mail': typeof AuthConfirmMailIndexRoute
   '/forgot-password': typeof AuthForgotPasswordIndexRoute
   '/login': typeof AuthLoginIndexRoute
   '/registration': typeof AuthRegistrationIndexRoute
-  '/crm/bookings': typeof CrmBookingsIndexRoute
-  '/crm/communication': typeof CrmCommunicationIndexRoute
-  '/crm/insights': typeof CrmInsightsIndexRoute
-  '/crm/leads': typeof CrmLeadsIndexRoute
-  '/crm/segments': typeof CrmSegmentsIndexRoute
-  '/crm/tasks': typeof CrmTasksIndexRoute
-  '/crm/bookings/new/$leadId': typeof CrmBookingsNewLeadIdRoute
-  '/crm/communication/new/$leadId': typeof CrmCommunicationNewLeadIdRoute
-  '/crm/leads/$id/edit': typeof CrmLeadsIdEditRoute
-  '/crm/tasks/new/$leadId': typeof CrmTasksNewLeadIdRoute
+  '/reset-password': typeof AuthResetPasswordIndexRoute
+  '/crm/bookings/new': typeof AppCrmBookingsNewRouteWithChildren
+  '/crm/communication/new': typeof AppCrmCommunicationNewRouteWithChildren
+  '/crm/leads/$id': typeof AppCrmLeadsIdRoute
+  '/crm/leads/new': typeof AppCrmLeadsNewRoute
+  '/crm/tasks/new': typeof AppCrmTasksNewRouteWithChildren
+  '/crm/bookings': typeof AppCrmBookingsIndexRoute
+  '/crm/communication': typeof AppCrmCommunicationIndexRoute
+  '/crm/insights': typeof AppCrmInsightsIndexRoute
+  '/crm/leads': typeof AppCrmLeadsIndexRoute
+  '/crm/segments': typeof AppCrmSegmentsIndexRoute
+  '/crm/tasks': typeof AppCrmTasksIndexRoute
+  '/crm/bookings/new/$leadId': typeof AppCrmBookingsNewLeadIdRoute
+  '/crm/communication/new/$leadId': typeof AppCrmCommunicationNewLeadIdRoute
+  '/crm/leads/edit/$id': typeof AppCrmLeadsEditIdRoute
+  '/crm/tasks/new/$leadId': typeof AppCrmTasksNewLeadIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_app': typeof AppRouteWithChildren
   '/_auth': typeof AuthRouteWithChildren
-  '/crm/dashboard': typeof CrmDashboardRoute
-  '/crm/': typeof CrmIndexRoute
-  '/crm/bookings/new': typeof CrmBookingsNewRouteWithChildren
-  '/crm/communication/new': typeof CrmCommunicationNewRouteWithChildren
-  '/crm/leads/$id': typeof CrmLeadsIdRouteWithChildren
-  '/crm/leads/new': typeof CrmLeadsNewRoute
-  '/crm/tasks/new': typeof CrmTasksNewRouteWithChildren
+  '/_app/crm/dashboard': typeof AppCrmDashboardRoute
+  '/_auth/confirm-email/$token': typeof AuthConfirmEmailTokenRoute
+  '/_auth/reset-password/$token': typeof AuthResetPasswordTokenRoute
+  '/_app/crm/': typeof AppCrmIndexRoute
   '/_auth/confirm-mail/': typeof AuthConfirmMailIndexRoute
   '/_auth/forgot-password/': typeof AuthForgotPasswordIndexRoute
   '/_auth/login/': typeof AuthLoginIndexRoute
   '/_auth/registration/': typeof AuthRegistrationIndexRoute
-  '/crm/bookings/': typeof CrmBookingsIndexRoute
-  '/crm/communication/': typeof CrmCommunicationIndexRoute
-  '/crm/insights/': typeof CrmInsightsIndexRoute
-  '/crm/leads/': typeof CrmLeadsIndexRoute
-  '/crm/segments/': typeof CrmSegmentsIndexRoute
-  '/crm/tasks/': typeof CrmTasksIndexRoute
-  '/crm/bookings/new/$leadId': typeof CrmBookingsNewLeadIdRoute
-  '/crm/communication/new/$leadId': typeof CrmCommunicationNewLeadIdRoute
-  '/crm/leads/$id/edit': typeof CrmLeadsIdEditRoute
-  '/crm/tasks/new/$leadId': typeof CrmTasksNewLeadIdRoute
+  '/_auth/reset-password/': typeof AuthResetPasswordIndexRoute
+  '/_app/crm/bookings/new': typeof AppCrmBookingsNewRouteWithChildren
+  '/_app/crm/communication/new': typeof AppCrmCommunicationNewRouteWithChildren
+  '/_app/crm/leads/$id': typeof AppCrmLeadsIdRoute
+  '/_app/crm/leads/new': typeof AppCrmLeadsNewRoute
+  '/_app/crm/tasks/new': typeof AppCrmTasksNewRouteWithChildren
+  '/_app/crm/bookings/': typeof AppCrmBookingsIndexRoute
+  '/_app/crm/communication/': typeof AppCrmCommunicationIndexRoute
+  '/_app/crm/insights/': typeof AppCrmInsightsIndexRoute
+  '/_app/crm/leads/': typeof AppCrmLeadsIndexRoute
+  '/_app/crm/segments/': typeof AppCrmSegmentsIndexRoute
+  '/_app/crm/tasks/': typeof AppCrmTasksIndexRoute
+  '/_app/crm/bookings/new/$leadId': typeof AppCrmBookingsNewLeadIdRoute
+  '/_app/crm/communication/new/$leadId': typeof AppCrmCommunicationNewLeadIdRoute
+  '/_app/crm/leads/edit/$id': typeof AppCrmLeadsEditIdRoute
+  '/_app/crm/tasks/new/$leadId': typeof AppCrmTasksNewLeadIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -231,16 +265,19 @@ export interface FileRouteTypes {
     | '/'
     | ''
     | '/crm/dashboard'
+    | '/confirm-email/$token'
+    | '/reset-password/$token'
     | '/crm'
+    | '/confirm-mail'
+    | '/forgot-password'
+    | '/login'
+    | '/registration'
+    | '/reset-password'
     | '/crm/bookings/new'
     | '/crm/communication/new'
     | '/crm/leads/$id'
     | '/crm/leads/new'
     | '/crm/tasks/new'
-    | '/confirm-mail'
-    | '/forgot-password'
-    | '/login'
-    | '/registration'
     | '/crm/bookings'
     | '/crm/communication'
     | '/crm/insights'
@@ -249,23 +286,26 @@ export interface FileRouteTypes {
     | '/crm/tasks'
     | '/crm/bookings/new/$leadId'
     | '/crm/communication/new/$leadId'
-    | '/crm/leads/$id/edit'
+    | '/crm/leads/edit/$id'
     | '/crm/tasks/new/$leadId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | ''
     | '/crm/dashboard'
+    | '/confirm-email/$token'
+    | '/reset-password/$token'
     | '/crm'
+    | '/confirm-mail'
+    | '/forgot-password'
+    | '/login'
+    | '/registration'
+    | '/reset-password'
     | '/crm/bookings/new'
     | '/crm/communication/new'
     | '/crm/leads/$id'
     | '/crm/leads/new'
     | '/crm/tasks/new'
-    | '/confirm-mail'
-    | '/forgot-password'
-    | '/login'
-    | '/registration'
     | '/crm/bookings'
     | '/crm/communication'
     | '/crm/insights'
@@ -274,51 +314,43 @@ export interface FileRouteTypes {
     | '/crm/tasks'
     | '/crm/bookings/new/$leadId'
     | '/crm/communication/new/$leadId'
-    | '/crm/leads/$id/edit'
+    | '/crm/leads/edit/$id'
     | '/crm/tasks/new/$leadId'
   id:
     | '__root__'
     | '/'
+    | '/_app'
     | '/_auth'
-    | '/crm/dashboard'
-    | '/crm/'
-    | '/crm/bookings/new'
-    | '/crm/communication/new'
-    | '/crm/leads/$id'
-    | '/crm/leads/new'
-    | '/crm/tasks/new'
+    | '/_app/crm/dashboard'
+    | '/_auth/confirm-email/$token'
+    | '/_auth/reset-password/$token'
+    | '/_app/crm/'
     | '/_auth/confirm-mail/'
     | '/_auth/forgot-password/'
     | '/_auth/login/'
     | '/_auth/registration/'
-    | '/crm/bookings/'
-    | '/crm/communication/'
-    | '/crm/insights/'
-    | '/crm/leads/'
-    | '/crm/segments/'
-    | '/crm/tasks/'
-    | '/crm/bookings/new/$leadId'
-    | '/crm/communication/new/$leadId'
-    | '/crm/leads/$id/edit'
-    | '/crm/tasks/new/$leadId'
+    | '/_auth/reset-password/'
+    | '/_app/crm/bookings/new'
+    | '/_app/crm/communication/new'
+    | '/_app/crm/leads/$id'
+    | '/_app/crm/leads/new'
+    | '/_app/crm/tasks/new'
+    | '/_app/crm/bookings/'
+    | '/_app/crm/communication/'
+    | '/_app/crm/insights/'
+    | '/_app/crm/leads/'
+    | '/_app/crm/segments/'
+    | '/_app/crm/tasks/'
+    | '/_app/crm/bookings/new/$leadId'
+    | '/_app/crm/communication/new/$leadId'
+    | '/_app/crm/leads/edit/$id'
+    | '/_app/crm/tasks/new/$leadId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AppRoute: typeof AppRouteWithChildren
   AuthRoute: typeof AuthRouteWithChildren
-  CrmDashboardRoute: typeof CrmDashboardRoute
-  CrmIndexRoute: typeof CrmIndexRoute
-  CrmBookingsNewRoute: typeof CrmBookingsNewRouteWithChildren
-  CrmCommunicationNewRoute: typeof CrmCommunicationNewRouteWithChildren
-  CrmLeadsIdRoute: typeof CrmLeadsIdRouteWithChildren
-  CrmLeadsNewRoute: typeof CrmLeadsNewRoute
-  CrmTasksNewRoute: typeof CrmTasksNewRouteWithChildren
-  CrmBookingsIndexRoute: typeof CrmBookingsIndexRoute
-  CrmCommunicationIndexRoute: typeof CrmCommunicationIndexRoute
-  CrmInsightsIndexRoute: typeof CrmInsightsIndexRoute
-  CrmLeadsIndexRoute: typeof CrmLeadsIndexRoute
-  CrmSegmentsIndexRoute: typeof CrmSegmentsIndexRoute
-  CrmTasksIndexRoute: typeof CrmTasksIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -330,6 +362,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app': {
+      id: '/_app'
+      path: ''
+      fullPath: ''
+      preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -337,61 +376,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/crm/': {
-      id: '/crm/'
-      path: '/crm'
-      fullPath: '/crm'
-      preLoaderRoute: typeof CrmIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/crm/dashboard': {
-      id: '/crm/dashboard'
-      path: '/crm/dashboard'
-      fullPath: '/crm/dashboard'
-      preLoaderRoute: typeof CrmDashboardRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/crm/tasks/': {
-      id: '/crm/tasks/'
-      path: '/crm/tasks'
-      fullPath: '/crm/tasks'
-      preLoaderRoute: typeof CrmTasksIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/crm/segments/': {
-      id: '/crm/segments/'
-      path: '/crm/segments'
-      fullPath: '/crm/segments'
-      preLoaderRoute: typeof CrmSegmentsIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/crm/leads/': {
-      id: '/crm/leads/'
-      path: '/crm/leads'
-      fullPath: '/crm/leads'
-      preLoaderRoute: typeof CrmLeadsIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/crm/insights/': {
-      id: '/crm/insights/'
-      path: '/crm/insights'
-      fullPath: '/crm/insights'
-      preLoaderRoute: typeof CrmInsightsIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/crm/communication/': {
-      id: '/crm/communication/'
-      path: '/crm/communication'
-      fullPath: '/crm/communication'
-      preLoaderRoute: typeof CrmCommunicationIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/crm/bookings/': {
-      id: '/crm/bookings/'
-      path: '/crm/bookings'
-      fullPath: '/crm/bookings'
-      preLoaderRoute: typeof CrmBookingsIndexRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_auth/reset-password/': {
+      id: '/_auth/reset-password/'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof AuthResetPasswordIndexRouteImport
+      parentRoute: typeof AuthRoute
     }
     '/_auth/registration/': {
       id: '/_auth/registration/'
@@ -421,151 +411,241 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthConfirmMailIndexRouteImport
       parentRoute: typeof AuthRoute
     }
-    '/crm/tasks/new': {
-      id: '/crm/tasks/new'
+    '/_app/crm/': {
+      id: '/_app/crm/'
+      path: '/crm'
+      fullPath: '/crm'
+      preLoaderRoute: typeof AppCrmIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_auth/reset-password/$token': {
+      id: '/_auth/reset-password/$token'
+      path: '/reset-password/$token'
+      fullPath: '/reset-password/$token'
+      preLoaderRoute: typeof AuthResetPasswordTokenRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/confirm-email/$token': {
+      id: '/_auth/confirm-email/$token'
+      path: '/confirm-email/$token'
+      fullPath: '/confirm-email/$token'
+      preLoaderRoute: typeof AuthConfirmEmailTokenRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_app/crm/dashboard': {
+      id: '/_app/crm/dashboard'
+      path: '/crm/dashboard'
+      fullPath: '/crm/dashboard'
+      preLoaderRoute: typeof AppCrmDashboardRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/crm/tasks/': {
+      id: '/_app/crm/tasks/'
+      path: '/crm/tasks'
+      fullPath: '/crm/tasks'
+      preLoaderRoute: typeof AppCrmTasksIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/crm/segments/': {
+      id: '/_app/crm/segments/'
+      path: '/crm/segments'
+      fullPath: '/crm/segments'
+      preLoaderRoute: typeof AppCrmSegmentsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/crm/leads/': {
+      id: '/_app/crm/leads/'
+      path: '/crm/leads'
+      fullPath: '/crm/leads'
+      preLoaderRoute: typeof AppCrmLeadsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/crm/insights/': {
+      id: '/_app/crm/insights/'
+      path: '/crm/insights'
+      fullPath: '/crm/insights'
+      preLoaderRoute: typeof AppCrmInsightsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/crm/communication/': {
+      id: '/_app/crm/communication/'
+      path: '/crm/communication'
+      fullPath: '/crm/communication'
+      preLoaderRoute: typeof AppCrmCommunicationIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/crm/bookings/': {
+      id: '/_app/crm/bookings/'
+      path: '/crm/bookings'
+      fullPath: '/crm/bookings'
+      preLoaderRoute: typeof AppCrmBookingsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/crm/tasks/new': {
+      id: '/_app/crm/tasks/new'
       path: '/crm/tasks/new'
       fullPath: '/crm/tasks/new'
-      preLoaderRoute: typeof CrmTasksNewRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AppCrmTasksNewRouteImport
+      parentRoute: typeof AppRoute
     }
-    '/crm/leads/new': {
-      id: '/crm/leads/new'
+    '/_app/crm/leads/new': {
+      id: '/_app/crm/leads/new'
       path: '/crm/leads/new'
       fullPath: '/crm/leads/new'
-      preLoaderRoute: typeof CrmLeadsNewRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AppCrmLeadsNewRouteImport
+      parentRoute: typeof AppRoute
     }
-    '/crm/leads/$id': {
-      id: '/crm/leads/$id'
+    '/_app/crm/leads/$id': {
+      id: '/_app/crm/leads/$id'
       path: '/crm/leads/$id'
       fullPath: '/crm/leads/$id'
-      preLoaderRoute: typeof CrmLeadsIdRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AppCrmLeadsIdRouteImport
+      parentRoute: typeof AppRoute
     }
-    '/crm/communication/new': {
-      id: '/crm/communication/new'
+    '/_app/crm/communication/new': {
+      id: '/_app/crm/communication/new'
       path: '/crm/communication/new'
       fullPath: '/crm/communication/new'
-      preLoaderRoute: typeof CrmCommunicationNewRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AppCrmCommunicationNewRouteImport
+      parentRoute: typeof AppRoute
     }
-    '/crm/bookings/new': {
-      id: '/crm/bookings/new'
+    '/_app/crm/bookings/new': {
+      id: '/_app/crm/bookings/new'
       path: '/crm/bookings/new'
       fullPath: '/crm/bookings/new'
-      preLoaderRoute: typeof CrmBookingsNewRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AppCrmBookingsNewRouteImport
+      parentRoute: typeof AppRoute
     }
-    '/crm/tasks/new/$leadId': {
-      id: '/crm/tasks/new/$leadId'
+    '/_app/crm/tasks/new/$leadId': {
+      id: '/_app/crm/tasks/new/$leadId'
       path: '/$leadId'
       fullPath: '/crm/tasks/new/$leadId'
-      preLoaderRoute: typeof CrmTasksNewLeadIdRouteImport
-      parentRoute: typeof CrmTasksNewRoute
+      preLoaderRoute: typeof AppCrmTasksNewLeadIdRouteImport
+      parentRoute: typeof AppCrmTasksNewRoute
     }
-    '/crm/leads/$id/edit': {
-      id: '/crm/leads/$id/edit'
-      path: '/edit'
-      fullPath: '/crm/leads/$id/edit'
-      preLoaderRoute: typeof CrmLeadsIdEditRouteImport
-      parentRoute: typeof CrmLeadsIdRoute
+    '/_app/crm/leads/edit/$id': {
+      id: '/_app/crm/leads/edit/$id'
+      path: '/crm/leads/edit/$id'
+      fullPath: '/crm/leads/edit/$id'
+      preLoaderRoute: typeof AppCrmLeadsEditIdRouteImport
+      parentRoute: typeof AppRoute
     }
-    '/crm/communication/new/$leadId': {
-      id: '/crm/communication/new/$leadId'
+    '/_app/crm/communication/new/$leadId': {
+      id: '/_app/crm/communication/new/$leadId'
       path: '/$leadId'
       fullPath: '/crm/communication/new/$leadId'
-      preLoaderRoute: typeof CrmCommunicationNewLeadIdRouteImport
-      parentRoute: typeof CrmCommunicationNewRoute
+      preLoaderRoute: typeof AppCrmCommunicationNewLeadIdRouteImport
+      parentRoute: typeof AppCrmCommunicationNewRoute
     }
-    '/crm/bookings/new/$leadId': {
-      id: '/crm/bookings/new/$leadId'
+    '/_app/crm/bookings/new/$leadId': {
+      id: '/_app/crm/bookings/new/$leadId'
       path: '/$leadId'
       fullPath: '/crm/bookings/new/$leadId'
-      preLoaderRoute: typeof CrmBookingsNewLeadIdRouteImport
-      parentRoute: typeof CrmBookingsNewRoute
+      preLoaderRoute: typeof AppCrmBookingsNewLeadIdRouteImport
+      parentRoute: typeof AppCrmBookingsNewRoute
     }
   }
 }
 
+interface AppCrmBookingsNewRouteChildren {
+  AppCrmBookingsNewLeadIdRoute: typeof AppCrmBookingsNewLeadIdRoute
+}
+
+const AppCrmBookingsNewRouteChildren: AppCrmBookingsNewRouteChildren = {
+  AppCrmBookingsNewLeadIdRoute: AppCrmBookingsNewLeadIdRoute,
+}
+
+const AppCrmBookingsNewRouteWithChildren =
+  AppCrmBookingsNewRoute._addFileChildren(AppCrmBookingsNewRouteChildren)
+
+interface AppCrmCommunicationNewRouteChildren {
+  AppCrmCommunicationNewLeadIdRoute: typeof AppCrmCommunicationNewLeadIdRoute
+}
+
+const AppCrmCommunicationNewRouteChildren: AppCrmCommunicationNewRouteChildren =
+  {
+    AppCrmCommunicationNewLeadIdRoute: AppCrmCommunicationNewLeadIdRoute,
+  }
+
+const AppCrmCommunicationNewRouteWithChildren =
+  AppCrmCommunicationNewRoute._addFileChildren(
+    AppCrmCommunicationNewRouteChildren,
+  )
+
+interface AppCrmTasksNewRouteChildren {
+  AppCrmTasksNewLeadIdRoute: typeof AppCrmTasksNewLeadIdRoute
+}
+
+const AppCrmTasksNewRouteChildren: AppCrmTasksNewRouteChildren = {
+  AppCrmTasksNewLeadIdRoute: AppCrmTasksNewLeadIdRoute,
+}
+
+const AppCrmTasksNewRouteWithChildren = AppCrmTasksNewRoute._addFileChildren(
+  AppCrmTasksNewRouteChildren,
+)
+
+interface AppRouteChildren {
+  AppCrmDashboardRoute: typeof AppCrmDashboardRoute
+  AppCrmIndexRoute: typeof AppCrmIndexRoute
+  AppCrmBookingsNewRoute: typeof AppCrmBookingsNewRouteWithChildren
+  AppCrmCommunicationNewRoute: typeof AppCrmCommunicationNewRouteWithChildren
+  AppCrmLeadsIdRoute: typeof AppCrmLeadsIdRoute
+  AppCrmLeadsNewRoute: typeof AppCrmLeadsNewRoute
+  AppCrmTasksNewRoute: typeof AppCrmTasksNewRouteWithChildren
+  AppCrmBookingsIndexRoute: typeof AppCrmBookingsIndexRoute
+  AppCrmCommunicationIndexRoute: typeof AppCrmCommunicationIndexRoute
+  AppCrmInsightsIndexRoute: typeof AppCrmInsightsIndexRoute
+  AppCrmLeadsIndexRoute: typeof AppCrmLeadsIndexRoute
+  AppCrmSegmentsIndexRoute: typeof AppCrmSegmentsIndexRoute
+  AppCrmTasksIndexRoute: typeof AppCrmTasksIndexRoute
+  AppCrmLeadsEditIdRoute: typeof AppCrmLeadsEditIdRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppCrmDashboardRoute: AppCrmDashboardRoute,
+  AppCrmIndexRoute: AppCrmIndexRoute,
+  AppCrmBookingsNewRoute: AppCrmBookingsNewRouteWithChildren,
+  AppCrmCommunicationNewRoute: AppCrmCommunicationNewRouteWithChildren,
+  AppCrmLeadsIdRoute: AppCrmLeadsIdRoute,
+  AppCrmLeadsNewRoute: AppCrmLeadsNewRoute,
+  AppCrmTasksNewRoute: AppCrmTasksNewRouteWithChildren,
+  AppCrmBookingsIndexRoute: AppCrmBookingsIndexRoute,
+  AppCrmCommunicationIndexRoute: AppCrmCommunicationIndexRoute,
+  AppCrmInsightsIndexRoute: AppCrmInsightsIndexRoute,
+  AppCrmLeadsIndexRoute: AppCrmLeadsIndexRoute,
+  AppCrmSegmentsIndexRoute: AppCrmSegmentsIndexRoute,
+  AppCrmTasksIndexRoute: AppCrmTasksIndexRoute,
+  AppCrmLeadsEditIdRoute: AppCrmLeadsEditIdRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
 interface AuthRouteChildren {
+  AuthConfirmEmailTokenRoute: typeof AuthConfirmEmailTokenRoute
+  AuthResetPasswordTokenRoute: typeof AuthResetPasswordTokenRoute
   AuthConfirmMailIndexRoute: typeof AuthConfirmMailIndexRoute
   AuthForgotPasswordIndexRoute: typeof AuthForgotPasswordIndexRoute
   AuthLoginIndexRoute: typeof AuthLoginIndexRoute
   AuthRegistrationIndexRoute: typeof AuthRegistrationIndexRoute
+  AuthResetPasswordIndexRoute: typeof AuthResetPasswordIndexRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
+  AuthConfirmEmailTokenRoute: AuthConfirmEmailTokenRoute,
+  AuthResetPasswordTokenRoute: AuthResetPasswordTokenRoute,
   AuthConfirmMailIndexRoute: AuthConfirmMailIndexRoute,
   AuthForgotPasswordIndexRoute: AuthForgotPasswordIndexRoute,
   AuthLoginIndexRoute: AuthLoginIndexRoute,
   AuthRegistrationIndexRoute: AuthRegistrationIndexRoute,
+  AuthResetPasswordIndexRoute: AuthResetPasswordIndexRoute,
 }
 
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 
-interface CrmBookingsNewRouteChildren {
-  CrmBookingsNewLeadIdRoute: typeof CrmBookingsNewLeadIdRoute
-}
-
-const CrmBookingsNewRouteChildren: CrmBookingsNewRouteChildren = {
-  CrmBookingsNewLeadIdRoute: CrmBookingsNewLeadIdRoute,
-}
-
-const CrmBookingsNewRouteWithChildren = CrmBookingsNewRoute._addFileChildren(
-  CrmBookingsNewRouteChildren,
-)
-
-interface CrmCommunicationNewRouteChildren {
-  CrmCommunicationNewLeadIdRoute: typeof CrmCommunicationNewLeadIdRoute
-}
-
-const CrmCommunicationNewRouteChildren: CrmCommunicationNewRouteChildren = {
-  CrmCommunicationNewLeadIdRoute: CrmCommunicationNewLeadIdRoute,
-}
-
-const CrmCommunicationNewRouteWithChildren =
-  CrmCommunicationNewRoute._addFileChildren(CrmCommunicationNewRouteChildren)
-
-interface CrmLeadsIdRouteChildren {
-  CrmLeadsIdEditRoute: typeof CrmLeadsIdEditRoute
-}
-
-const CrmLeadsIdRouteChildren: CrmLeadsIdRouteChildren = {
-  CrmLeadsIdEditRoute: CrmLeadsIdEditRoute,
-}
-
-const CrmLeadsIdRouteWithChildren = CrmLeadsIdRoute._addFileChildren(
-  CrmLeadsIdRouteChildren,
-)
-
-interface CrmTasksNewRouteChildren {
-  CrmTasksNewLeadIdRoute: typeof CrmTasksNewLeadIdRoute
-}
-
-const CrmTasksNewRouteChildren: CrmTasksNewRouteChildren = {
-  CrmTasksNewLeadIdRoute: CrmTasksNewLeadIdRoute,
-}
-
-const CrmTasksNewRouteWithChildren = CrmTasksNewRoute._addFileChildren(
-  CrmTasksNewRouteChildren,
-)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AppRoute: AppRouteWithChildren,
   AuthRoute: AuthRouteWithChildren,
-  CrmDashboardRoute: CrmDashboardRoute,
-  CrmIndexRoute: CrmIndexRoute,
-  CrmBookingsNewRoute: CrmBookingsNewRouteWithChildren,
-  CrmCommunicationNewRoute: CrmCommunicationNewRouteWithChildren,
-  CrmLeadsIdRoute: CrmLeadsIdRouteWithChildren,
-  CrmLeadsNewRoute: CrmLeadsNewRoute,
-  CrmTasksNewRoute: CrmTasksNewRouteWithChildren,
-  CrmBookingsIndexRoute: CrmBookingsIndexRoute,
-  CrmCommunicationIndexRoute: CrmCommunicationIndexRoute,
-  CrmInsightsIndexRoute: CrmInsightsIndexRoute,
-  CrmLeadsIndexRoute: CrmLeadsIndexRoute,
-  CrmSegmentsIndexRoute: CrmSegmentsIndexRoute,
-  CrmTasksIndexRoute: CrmTasksIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -33,6 +33,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { useCrmStore } from '@/lib/store';
 import { LeadSource, LeadStatus } from '@/types/crm';
+import { useLeadGetAllQuery } from '@/store/api/Services/leadApi';
 
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -55,6 +56,12 @@ const LeadsPage: React.FC = () => {
   const navigate = useNavigate();
   const { leads, leadViewMode, setLeadViewMode, isOffline } = useCrmStore();
 
+  // Fetch leads from API
+  const { data: apiResponse, isLoading, error } = useLeadGetAllQuery();
+
+  // Use API data if available, otherwise fall back to local store
+  const allLeads = apiResponse?.data?.data || leads;
+
   // Enhanced state management
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState<FilterState>({
@@ -71,10 +78,10 @@ const LeadsPage: React.FC = () => {
 
   // Memoized filtering logic
   const filteredLeads = useMemo(() => {
-    return leads.filter(lead => {
+    return allLeads.filter(lead => {
       const matchesSearch =
         !searchTerm ||
-        lead.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        lead.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         lead.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         lead.phone?.includes(searchTerm);
 
@@ -88,14 +95,14 @@ const LeadsPage: React.FC = () => {
         if (filters.priority === 'all') {
           return true;
         }
-        const score = lead.aiPriorityScore || 0;
+        const score = lead.aiScore?.value || 50;
         switch (filters.priority) {
           case 'high':
-            return score >= 0.7;
+            return score >= 70;
           case 'medium':
-            return score >= 0.4 && score < 0.7;
+            return score >= 40 && score < 70;
           case 'low':
-            return score < 0.4;
+            return score < 40;
           default:
             return true;
         }
@@ -135,7 +142,7 @@ const LeadsPage: React.FC = () => {
         matchesAssignee
       );
     });
-  }, [leads, searchTerm, filters]);
+  }, [allLeads, searchTerm, filters]);
 
   // Memoized sorting logic
   const sortedLeads = useMemo(() => {
@@ -143,7 +150,7 @@ const LeadsPage: React.FC = () => {
       const direction = sortConfig.direction === 'asc' ? 1 : -1;
       switch (sortConfig.key) {
         case 'name':
-          return direction * a.name.localeCompare(b.name);
+          return direction * a.fullName.localeCompare(b.fullName);
         case 'createdAt':
           return (
             direction *
@@ -151,10 +158,14 @@ const LeadsPage: React.FC = () => {
           );
         case 'aiPriorityScore':
           return (
-            direction * ((a.aiPriorityScore || 0) - (b.aiPriorityScore || 0))
+            direction * ((a.aiScore?.value || 50) - (b.aiScore?.value || 50))
           );
         case 'budget':
-          return direction * ((a.budget || 0) - (b.budget || 0));
+          return (
+            direction *
+            ((a.travelDetails?.budget?.value || 0) -
+              (b.travelDetails?.budget?.value || 0))
+          );
         default:
           return 0;
       }

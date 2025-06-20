@@ -73,13 +73,13 @@ export const useCrmStore = create<CrmState>()(
       updateLead: (id, data) =>
         set(state => ({
           leads: state.leads.map(lead =>
-            lead.id === id ? { ...lead, ...data, updatedAt: new Date() } : lead
+            lead._id === id ? { ...lead, ...data, updatedAt: new Date() } : lead
           ),
         })),
 
       deleteLead: id =>
         set(state => ({
-          leads: state.leads.filter(lead => lead.id !== id),
+          leads: state.leads.filter(lead => lead._id !== id),
         })),
 
       addTask: task =>
@@ -166,86 +166,101 @@ export const useCrmStore = create<CrmState>()(
 function generateMockLeads(): Lead[] {
   return [
     {
-      id: 'lead-1',
-      name: 'John Smith',
+      _id: 'lead-1',
+      fullName: 'John Smith',
       email: 'john.smith@example.com',
       phone: '+1234567890',
       status: LeadStatus.NEW,
       source: LeadSource.WEBSITE,
       tags: ['family', 'beach', 'summer'],
       notes: 'Looking for a family vacation package to Hawaii',
-      budget: 5000,
-      travelDates: {
-        start: new Date(2023, 6, 15),
-        end: new Date(2023, 6, 25),
+      travelDetails: {
+        destination: 'Hawaii',
+        departureDate: new Date(2023, 6, 15),
+        returnDate: new Date(2023, 6, 25),
+        budget: {
+          currency: 'USD',
+          value: 5000,
+        },
+        preferences: {
+          accommodation: 'Resort',
+          specialRequests: 'Beach, Hiking, Snorkeling',
+        },
       },
       createdAt: new Date(2023, 5, 10),
       updatedAt: new Date(2023, 5, 10),
       assignedTo: 'agent-1',
       collaborators: [],
-      aiPriorityScore: 0.85,
-      preferences: {
-        destination: 'Hawaii',
-        accommodation: 'Resort',
-        activities: 'Beach, Hiking, Snorkeling',
+      aiScore: {
+        value: 85,
       },
       isReturnCustomer: false,
     },
     {
-      id: 'lead-2',
-      name: 'Emma Johnson',
+      _id: 'lead-2',
+      fullName: 'Emma Johnson',
       email: 'emma@example.com',
       phone: '+1987654321',
       status: LeadStatus.CONTACTED,
       source: LeadSource.REFERRAL,
       tags: ['honeymoon', 'luxury'],
       notes: 'Planning a honeymoon trip to Maldives',
-      budget: 8000,
-      travelDates: {
-        start: new Date(2023, 9, 5),
-        end: new Date(2023, 9, 15),
+      travelDetails: {
+        destination: 'Maldives',
+        departureDate: new Date(2023, 9, 5),
+        returnDate: new Date(2023, 9, 15),
+        budget: {
+          currency: 'USD',
+          value: 8000,
+        },
+        preferences: {
+          accommodation: 'Overwater bungalow',
+          specialRequests: 'Snorkeling, Spa, Romantic dinner',
+        },
       },
       createdAt: new Date(2023, 5, 12),
       updatedAt: new Date(2023, 5, 15),
       assignedTo: 'agent-2',
       collaborators: ['agent-1'],
-      aiPriorityScore: 0.92,
-      preferences: {
-        destination: 'Maldives',
-        accommodation: 'Overwater bungalow',
-        activities: 'Snorkeling, Spa, Romantic dinner',
+      aiScore: {
+        value: 92,
       },
       isReturnCustomer: false,
     },
     {
-      id: 'lead-3',
-      name: 'Michael Brown',
+      _id: 'lead-3',
+      fullName: 'Michael Brown',
       email: 'michael@example.com',
       phone: '+1122334455',
       status: LeadStatus.QUALIFIED,
       source: LeadSource.SOCIAL,
       tags: ['business', 'short-stay'],
       notes: 'Business trip to Tokyo, needs hotel near city center',
-      budget: 3000,
-      travelDates: {
-        start: new Date(2023, 6, 1),
-        end: new Date(2023, 6, 5),
+      travelDetails: {
+        destination: 'Tokyo',
+        departureDate: new Date(2023, 6, 1),
+        returnDate: new Date(2023, 6, 5),
+        budget: {
+          currency: 'USD',
+          value: 3000,
+        },
+        preferences: {
+          accommodation: 'Business hotel',
+          specialRequests: 'None',
+        },
       },
       createdAt: new Date(2023, 5, 20),
       updatedAt: new Date(2023, 5, 22),
       assignedTo: 'agent-1',
       collaborators: [],
-      aiPriorityScore: 0.78,
-      preferences: {
-        destination: 'Tokyo',
-        accommodation: 'Business hotel',
-        activities: 'None',
+      aiScore: {
+        value: 78,
       },
       isReturnCustomer: false,
     },
     {
-      id: 'lead-4',
-      name: 'Sarah Williams',
+      _id: 'lead-4',
+      fullName: 'Sarah Williams',
       email: 'sarah@example.com',
       phone: '+1555666777',
       status: LeadStatus.BOOKED,
@@ -253,50 +268,27 @@ function generateMockLeads(): Lead[] {
       tags: ['return-customer', 'luxury', 'anniversary'],
       notes:
         'Anniversary trip to Paris, returning customer who booked Bali last year',
-      budget: 9500,
-      travelDates: {
-        start: new Date(2023, 7, 10),
-        end: new Date(2023, 7, 20),
-      },
-      createdAt: new Date(2023, 4, 15),
-      updatedAt: new Date(2023, 5, 5),
-      assignedTo: 'agent-2',
-      collaborators: [],
-      aiPriorityScore: 0.95,
-      preferences: {
+      travelDetails: {
         destination: 'Paris',
-        accommodation: '5-star hotel',
-        activities: 'Fine dining, Museums, Shopping',
-      },
-      isReturnCustomer: true,
-      previousBookings: ['booking-2'],
-    },
-    {
-      id: 'lead-5',
-      name: 'David Chen',
-      email: 'david@example.com',
-      phone: '+1333444555',
-      status: LeadStatus.CONTACTED,
-      source: LeadSource.WEBSITE,
-      tags: ['family', 'theme-park', 'return-customer'],
-      notes: 'Family trip to Orlando, previously booked New York City tour',
-      budget: 6500,
-      travelDates: {
-        start: new Date(2023, 11, 20),
-        end: new Date(2023, 11, 30),
+        departureDate: new Date(2023, 7, 10),
+        returnDate: new Date(2023, 7, 20),
+        budget: {
+          currency: 'USD',
+          value: 9500,
+        },
+        preferences: {
+          accommodation: 'Luxury hotel',
+          specialRequests: 'Romantic dinner, Wine tasting',
+        },
       },
       createdAt: new Date(2023, 5, 25),
-      updatedAt: new Date(2023, 5, 26),
-      assignedTo: 'agent-1',
-      collaborators: ['agent-2'],
-      aiPriorityScore: 0.88,
-      preferences: {
-        destination: 'Orlando',
-        accommodation: 'Family resort',
-        activities: 'Disney World, Universal Studios',
+      updatedAt: new Date(2023, 5, 28),
+      assignedTo: 'agent-2',
+      collaborators: [],
+      aiScore: {
+        value: 95,
       },
       isReturnCustomer: true,
-      previousBookings: ['booking-3'],
     },
   ];
 }

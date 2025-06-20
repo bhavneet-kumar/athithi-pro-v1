@@ -9,6 +9,13 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -17,200 +24,143 @@ import { z } from 'zod';
 import { toast } from 'sonner';
 import { useState } from 'react';
 
-import { Loader2 } from 'lucide-react';
+import { Loader2, Mail, CheckCircle } from 'lucide-react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { useForgotPasswordMutation } from '@/store/api/Services/authApi';
 
 const forgotPasswordSchema = z.object({
-  username: z.string().min(1, 'Username is required'),
+  email: z.string().email('Please enter a valid email address'),
 });
 
-const confirmResetPasswordSchema = z
-  .object({
-    code: z.string().min(1, 'Reset code is required'),
-    newPassword: z
-      .string()
-      .min(8, 'Password must be at least 8 characters')
-      .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
-      .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
-      .regex(/[0-9]/, 'Password must contain at least one number'),
-    confirmPassword: z.string().min(1, 'Please confirm your password'),
-  })
-  .refine(data => data.newPassword === data.confirmPassword, {
-    message: 'Passwords do not match',
-    path: ['confirmPassword'],
-  });
-
 type ForgotPasswordValues = z.infer<typeof forgotPasswordSchema>;
-type ConfirmResetPasswordValues = z.infer<typeof confirmResetPasswordSchema>;
 
 export function ForgotPasswordForm({
   className,
   ...props
 }: React.ComponentProps<'form'>) {
   const [isResettingPassword, setIsResettingPassword] = useState(false);
-  const [isConfirmingReset, setIsConfirmingReset] = useState(false);
-  const [showConfirmReset, setShowConfirmReset] = useState(false);
-  const [username, setUsername] = useState('');
+  const [showEmailDialog, setShowEmailDialog] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
   const navigate = useNavigate();
+  const [forgotPassword] = useForgotPasswordMutation();
 
   const forgotPasswordForm = useForm<ForgotPasswordValues>({
     resolver: zodResolver(forgotPasswordSchema),
     defaultValues: {
-      username: '',
-    },
-  });
-
-  const confirmResetForm = useForm<ConfirmResetPasswordValues>({
-    resolver: zodResolver(confirmResetPasswordSchema),
-    defaultValues: {
-      code: '',
-      newPassword: '',
-      confirmPassword: '',
+      email: '',
     },
   });
 
   async function onForgotPassword(data: ForgotPasswordValues) {
     try {
       setIsResettingPassword(true);
-      // const { nextStep } = await resetPassword({
-      //   username: data.username,
-      // });
+      const response = await forgotPassword({ email: data.email }).unwrap();
 
-      // if (nextStep.resetPasswordStep === "CONFIRM_RESET_PASSWORD_WITH_CODE") {
-      //   toast.success("Reset code sent to your email!");
-      //   setUsername(data.username);
-      //   setShowConfirmReset(true);
-      // }
-    } catch (error) {
-      console.error('Error resetting password:', error);
-      toast.error('Failed to send reset code. Please try again.');
+      if (response.success) {
+        setResetEmail(data.email);
+        setShowEmailDialog(true);
+        toast.success('Password reset email sent successfully!');
+      }
+    } catch (error: any) {
+      console.error('Error sending reset email:', error);
+      toast.error(
+        error?.data?.message || 'Failed to send reset email. Please try again.'
+      );
     } finally {
       setIsResettingPassword(false);
     }
   }
 
-  async function onConfirmReset(data: ConfirmResetPasswordValues) {}
+  const handleEmailDialogClose = () => {
+    setShowEmailDialog(false);
+    navigate({ to: '/login' });
+  };
 
   return (
-    <div className='flex flex-col gap-6'>
-      {!showConfirmReset ? (
-        <Form {...forgotPasswordForm}>
-          <form
-            onSubmit={forgotPasswordForm.handleSubmit(onForgotPassword)}
-            className={cn('space-y-4', className)}
-            {...props}
+    <>
+      <Form {...forgotPasswordForm}>
+        <form
+          onSubmit={forgotPasswordForm.handleSubmit(onForgotPassword)}
+          className={cn('space-y-4', className)}
+          {...props}
+        >
+          <FormField
+            control={forgotPasswordForm.control}
+            name='email'
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Email Address</FormLabel>
+                <FormControl>
+                  <Input
+                    type='email'
+                    placeholder='Enter your email address'
+                    {...field}
+                    disabled={isResettingPassword}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <Button
+            type='submit'
+            className='w-full'
+            disabled={isResettingPassword}
           >
-            <FormField
-              control={forgotPasswordForm.control}
-              name='username'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Username</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder='Enter your username'
-                      {...field}
-                      disabled={isResettingPassword}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <Button
-              type='submit'
-              className='w-full'
-              disabled={isResettingPassword}
-            >
-              {isResettingPassword ? (
-                <>
-                  <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-                  Sending reset code...
-                </>
-              ) : (
-                'Send Reset Code'
-              )}
-            </Button>
-          </form>
-        </Form>
-      ) : (
-        <Form {...confirmResetForm}>
-          <form
-            onSubmit={confirmResetForm.handleSubmit(onConfirmReset)}
-            className={cn('space-y-4', className)}
-            {...props}
-          >
-            <FormField
-              control={confirmResetForm.control}
-              name='code'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Reset Code</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder='Enter the code sent to your email'
-                      {...field}
-                      disabled={isConfirmingReset}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={confirmResetForm.control}
-              name='newPassword'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>New Password</FormLabel>
-                  <FormControl>
-                    <Input
-                      type='password'
-                      placeholder='Enter your new password'
-                      {...field}
-                      disabled={isConfirmingReset}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={confirmResetForm.control}
-              name='confirmPassword'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Confirm New Password</FormLabel>
-                  <FormControl>
-                    <Input
-                      type='password'
-                      placeholder='Confirm your new password'
-                      {...field}
-                      disabled={isConfirmingReset}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <Button
-              type='submit'
-              className='w-full'
-              disabled={isConfirmingReset}
-            >
-              {isConfirmingReset ? (
-                <>
-                  <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-                  Resetting password...
-                </>
-              ) : (
-                'Reset Password'
-              )}
-            </Button>
-          </form>
-        </Form>
-      )}
-    </div>
+            {isResettingPassword ? (
+              <>
+                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                Sending reset email...
+              </>
+            ) : (
+              'Send Reset Email'
+            )}
+          </Button>
+        </form>
+      </Form>
+
+      {/* Email Check Dialog */}
+      <Dialog open={showEmailDialog} onOpenChange={setShowEmailDialog}>
+        <DialogContent className='sm:max-w-md'>
+          <DialogHeader className='text-center'>
+            <div className='mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-100'>
+              <Mail className='h-8 w-8 text-blue-600' />
+            </div>
+            <DialogTitle className='text-2xl font-bold text-gray-900'>
+              Check Your Email
+            </DialogTitle>
+            <DialogDescription className='text-gray-600 mt-2'>
+              We've sent a password reset link to
+            </DialogDescription>
+            <div className='mt-2 text-sm font-medium text-gray-900'>
+              {resetEmail}
+            </div>
+          </DialogHeader>
+
+          <div className='mt-6 space-y-4'>
+            <div className='rounded-lg bg-blue-50 p-4'>
+              <div className='flex items-start'>
+                <CheckCircle className='h-5 w-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0' />
+                <div className='text-sm text-blue-800'>
+                  <p className='font-medium'>What's next?</p>
+                  <ul className='mt-2 space-y-1'>
+                    <li>• Check your email inbox (and spam folder)</li>
+                    <li>• Click the password reset link in the email</li>
+                    <li>• Create a new password for your account</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div className='flex flex-col space-y-3'>
+              <Button onClick={handleEmailDialogClose} className='w-full'>
+                Back to Login
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 

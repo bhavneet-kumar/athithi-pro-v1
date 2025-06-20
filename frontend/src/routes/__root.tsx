@@ -1,17 +1,25 @@
 import Layout from '@/components/crm/Layout';
 import { Toaster } from '@/components/ui/sonner';
 import NotFound from '@/pages/NotFound';
+import { RootState } from '@/store';
 import { createRootRoute, Outlet } from '@tanstack/react-router';
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
 import { Loader2 } from 'lucide-react';
+import { useSelector } from 'react-redux';
 
 function RootComponent() {
+  const { tokens } = useSelector((state: RootState) => state.user);
+
   return (
     <>
       <Toaster />
-      <Layout>
+      {tokens ? (
+        <Layout>
+          <Outlet />
+        </Layout>
+      ) : (
         <Outlet />
-      </Layout>
+      )}
       <TanStackRouterDevtools />
     </>
   );

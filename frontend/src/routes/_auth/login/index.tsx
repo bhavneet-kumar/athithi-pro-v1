@@ -11,15 +11,17 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Eye, EyeOff } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-
+import { useLoginMutation, LoginRequest } from '@/store/api/Services/authApi';
 import { toast } from 'sonner';
 import { z } from 'zod';
+import { useDispatch } from 'react-redux';
+import { setCredentials } from '@/store/slices/userSlice';
 
 const loginFormSchema = z.object({
-  username: z.string().min(1, 'Username is required'),
+  email: z.string().email('Please enter a valid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
 });
 
@@ -35,34 +37,49 @@ export function LoginForm({
   ) => void;
 }) {
   const [isSigningIn, setIsSigningIn] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const [login] = useLoginMutation();
+
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginFormSchema),
     defaultValues: {
-      username: '',
+      email: '',
       password: '',
     },
   });
 
   async function onSubmit(data: LoginFormValues) {
     try {
-      // setIsSigningIn(true);
-      // const { isSignedIn, nextStep } = await signIn({
-      //   username: data.username,
-      //   password: data.password,
-      // });
-      // if (isSignedIn) {
-      //   toast.success("Successfully signed in!");
-      navigate({ to: '/crm' });
-      // } else if (nextStep.signInStep === "CONFIRM_SIGN_UP") {
-      //   setCurrentAuthStep("confirm-mail");
-      //   toast.error("Please confirm your email address first");
-      // } else if (nextStep.signInStep === "RESET_PASSWORD") {
-      //   toast.error("Please reset your password");
-      // }
-    } catch (error) {
+      setIsSigningIn(true);
+      const loginData: LoginRequest = {
+        email: data.email,
+        password: data.password,
+      };
+      const response = await login(loginData).unwrap();
+
+      if (response.success && response.data) {
+        // Dispatch user credentials to store
+        dispatch(
+          setCredentials({
+            user: response.data.user,
+            tokens: {
+              token: response.data.token,
+              refreshToken: response.data.refreshToken,
+            },
+          })
+        );
+
+        toast.success('Successfully signed in!');
+        navigate({ to: '/crm' });
+      }
+    } catch (error: any) {
       console.error('Error signing in:', error);
-      toast.error('Failed to sign in. Please check your credentials.');
+      toast.error(
+        error.data?.message ||
+          'Failed to sign in. Please check your credentials.'
+      );
     } finally {
       setIsSigningIn(false);
     }
@@ -78,15 +95,16 @@ export function LoginForm({
         <div className='grid gap-6'>
           <FormField
             control={form.control}
-            name='username'
+            name='email'
             render={({ field }) => (
               <FormItem>
                 <FormLabel className='text-[#1E1E1E] text-base font-normal'>
-                  Username
+                  Email
                 </FormLabel>
                 <FormControl>
                   <Input
-                    placeholder='Enter your username'
+                    placeholder='Enter your email'
+                    type='email'
                     {...field}
                     disabled={isSigningIn}
                   />
@@ -104,12 +122,29 @@ export function LoginForm({
                   Password
                 </FormLabel>
                 <FormControl>
-                  <Input
-                    placeholder='********'
-                    type='password'
-                    {...field}
-                    disabled={isSigningIn}
-                  />
+                  <div className='relative'>
+                    <Input
+                      placeholder='********'
+                      type={showPassword ? 'text' : 'password'}
+                      {...field}
+                      disabled={isSigningIn}
+                      className='pr-10'
+                    />
+                    <Button
+                      type='button'
+                      variant='ghost'
+                      size='sm'
+                      className='absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent'
+                      onClick={() => setShowPassword(!showPassword)}
+                      disabled={isSigningIn}
+                    >
+                      {showPassword ? (
+                        <EyeOff className='h-4 w-4' />
+                      ) : (
+                        <Eye className='h-4 w-4' />
+                      )}
+                    </Button>
+                  </div>
                 </FormControl>
                 <FormMessage />
               </FormItem>

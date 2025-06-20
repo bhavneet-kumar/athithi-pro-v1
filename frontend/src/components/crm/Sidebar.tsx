@@ -7,6 +7,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Users,
+  LogOut,
 } from 'lucide-react';
 import React from 'react';
 
@@ -14,9 +15,11 @@ import { Button } from '@/components/ui/button';
 import { useCrmStore } from '@/lib/store';
 import { cn } from '@/lib/utils';
 import { Link } from '@tanstack/react-router';
+import { useAuth } from '@/hooks/useAuth';
 
 const Sidebar: React.FC = () => {
   const { sidebarCollapsed, toggleSidebar } = useCrmStore();
+  const { user, logout } = useAuth();
 
   const navItems = [
     {
@@ -130,20 +133,71 @@ const Sidebar: React.FC = () => {
           ))}
         </div>
 
-        <Button
-          variant='ghost'
-          className='w-full justify-start mt-auto'
-          onClick={toggleSidebar}
-        >
-          {sidebarCollapsed ? (
-            <ChevronRight className='h-5 w-5' />
-          ) : (
-            <>
-              <ChevronLeft className='h-5 w-5 mr-2' />
-              <span>Collapse</span>
-            </>
+        <div className='space-y-2'>
+          {/* User Info */}
+          {user && (
+            <div
+              className={cn(
+                'px-2 py-2 border-t border-gray-100',
+                sidebarCollapsed ? 'text-center' : ''
+              )}
+            >
+              {!sidebarCollapsed ? (
+                <div className='space-y-1'>
+                  <div className='flex items-center space-x-2'>
+                    <div className='w-8 h-8 bg-[#9b87f5] rounded-full flex items-center justify-center'>
+                      <span className='text-white text-sm font-medium'>
+                        {user.firstName.charAt(0)}
+                        {user.lastName.charAt(0)}
+                      </span>
+                    </div>
+                    <div className='flex-1 min-w-0'>
+                      <p className='text-sm font-medium text-gray-900 truncate'>
+                        {user.firstName} {user.lastName}
+                      </p>
+                      <p className='text-xs text-gray-500 truncate'>
+                        {user.email}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className='w-8 h-8 bg-[#9b87f5] rounded-full flex items-center justify-center mx-auto'>
+                  <span className='text-white text-sm font-medium'>
+                    {user.firstName.charAt(0)}
+                    {user.lastName.charAt(0)}
+                  </span>
+                </div>
+              )}
+            </div>
           )}
-        </Button>
+
+          {/* Collapse Button */}
+          <Button
+            variant='ghost'
+            className='w-full justify-start'
+            onClick={toggleSidebar}
+          >
+            {sidebarCollapsed ? (
+              <ChevronRight className='h-5 w-5' />
+            ) : (
+              <>
+                <ChevronLeft className='h-5 w-5 mr-2' />
+                <span>Collapse</span>
+              </>
+            )}
+          </Button>
+
+          {/* Logout Button */}
+          <Button
+            variant='ghost'
+            className='w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50'
+            onClick={logout}
+          >
+            <LogOut className='h-5 w-5 mr-2' />
+            {!sidebarCollapsed && <span>Logout</span>}
+          </Button>
+        </div>
       </div>
     </aside>
   );

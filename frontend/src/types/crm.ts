@@ -2,24 +2,24 @@ import { z } from 'zod';
 
 // Enums
 export enum LeadStatus {
-  NEW = 'new',
-  CONTACTED = 'contacted',
-  QUALIFIED = 'qualified',
-  PROPOSAL = 'proposal',
-  NEGOTIATION = 'negotiation',
-  BOOKED = 'booked',
-  LOST = 'lost',
+  NEW = 'NEW',
+  CONTACTED = 'CONTACTED',
+  QUALIFIED = 'QUALIFIED',
+  PROPOSAL = 'PROPOSAL',
+  NEGOTIATION = 'NEGOTIATION',
+  BOOKED = 'BOOKED',
+  LOST = 'LOST',
 }
 
 export enum LeadSource {
-  WEBSITE = 'website',
-  REFERRAL = 'referral',
-  SOCIAL = 'social',
-  EMAIL = 'email',
-  PHONE = 'phone',
-  WHATSAPP = 'whatsapp',
-  MARKETPLACE = 'marketplace',
-  OTHER = 'other',
+  WEBSITE = 'WEBSITE',
+  REFERRAL = 'REFERRAL',
+  SOCIAL = 'SOCIAL',
+  EMAIL = 'EMAIL',
+  PHONE = 'PHONE',
+  WHATSAPP = 'WHATSAPP',
+  MARKETPLACE = 'MARKETPLACE',
+  OTHER = 'OTHER',
 }
 
 export enum TaskType {
@@ -49,27 +49,57 @@ export enum CommunicationChannel {
 
 // Schemas
 export const LeadSchema = z.object({
-  id: z.string(),
-  name: z.string().min(1, 'Name is required'),
+  _id: z.string(),
+  agencyId: z.string().optional(),
+  leadNumber: z.string().optional(),
+  fullName: z.string().min(1, 'Full name is required'),
   email: z.string().email().optional(),
   phone: z.string().optional(),
   status: z.nativeEnum(LeadStatus).default(LeadStatus.NEW),
   source: z.nativeEnum(LeadSource),
+  assignedTo: z.string().optional(),
+  travelDetails: z
+    .object({
+      destination: z.string().optional(),
+      departureDate: z.date().or(z.string()).optional(),
+      returnDate: z.date().or(z.string()).optional(),
+      budget: z
+        .object({
+          currency: z.string().default('INR'),
+          value: z.number().optional(),
+        })
+        .optional(),
+      preferences: z
+        .object({
+          accommodation: z.string().optional(),
+          specialRequests: z.string().optional(),
+        })
+        .optional(),
+    })
+    .optional(),
+  aiScore: z
+    .object({
+      value: z.number().min(0).max(100).default(50),
+      lastCalculated: z.date().or(z.string()).optional(),
+    })
+    .optional(),
   tags: z.array(z.string()).default([]),
   notes: z.string().optional(),
-  budget: z.number().optional(),
-  travelDates: z
+  nextFollowUp: z.date().or(z.string()).optional(),
+  followUpReason: z.string().optional(),
+  audit: z
     .object({
-      start: z.date().or(z.string()).optional(),
-      end: z.date().or(z.string()).optional(),
+      createdAt: z.date().or(z.string()),
+      createdBy: z.string(),
+      updatedAt: z.date().or(z.string()),
+      updatedBy: z.string(),
+      version: z.number(),
+      isDeleted: z.boolean(),
     })
     .optional(),
   createdAt: z.date().or(z.string()),
   updatedAt: z.date().or(z.string()),
-  assignedTo: z.string().optional(),
   collaborators: z.array(z.string()).default([]),
-  aiPriorityScore: z.number().min(0).max(1).default(0.5),
-  preferences: z.record(z.string()).optional(),
   isReturnCustomer: z.boolean().default(false),
   previousBookings: z.array(z.string()).optional(),
 });

@@ -26,7 +26,7 @@ export const useCurrency = () => {
   };
 
   // Format based on selected currency
-  const formatCurrency = (amount: number): string => {
+  const formatCurrency = (currency: Currency, amount: number): string => {
     if (!amount && amount !== 0) {
       return '';
     }

@@ -88,9 +88,9 @@ export class LeadService extends BaseService<ILead> {
 
   async getAll(query: ILeadFilter, agencyId: string): Promise<{ data: ILead[]; total: number }> {
     try {
-      const { limit, page, sortBy, sortOrder, ...filterQuery } = query;
+      const { limit, page, sortBy, sortOrder, search, ...filterQuery } = query;
       const skip = (page - 1) * limit;
-      const searchQuery = query.search ? { $text: { $search: query.search as string } } : {};
+      const searchQuery = search ? { $text: { $search: search as string } } : {};
 
       const sort = this.getSortOptions(sortBy, sortOrder);
 

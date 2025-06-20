@@ -171,7 +171,7 @@ const logChange = async (
 };
 
 // Set up post-save hook for a model
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 export const setUpPostSaveHook = (modelSchema: Schema): void => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   modelSchema.post('save', async function (this: any, next: NextFunction) {

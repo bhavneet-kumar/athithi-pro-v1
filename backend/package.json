@@ -19,7 +19,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "code-quality": "npm run lint && npm run format:check && npm run tsc",
-    "prepare": "husky"
+    "prepare": "husky",
+    "dev:skip-lint-worker": "nodemon --exec \"node -r ts-node/register\" src/server.ts"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [

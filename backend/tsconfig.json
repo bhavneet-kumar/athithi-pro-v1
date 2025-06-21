@@ -23,7 +23,7 @@
     // This improves issue grouping in Sentry.
     "sourceRoot": "/"
   },
-  "include": ["./src/**/*.tsx", "./src/**/*.ts", "./src/types/**/*.d.ts"],
+  "include": ["./src/**/*.tsx", "./src/**/*.ts", "./src/types/**/*.d.ts", "src/module/lead/leadStreams.worker.ts"],
   "exclude": ["node_modules", "test/**/*.ts"],
   "ts-node": {
     "files": true,

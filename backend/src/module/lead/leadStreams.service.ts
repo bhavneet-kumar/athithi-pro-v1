@@ -103,9 +103,13 @@ export class LeadStreamsService {
           continue;
         }
 
+        console.log('entries', entries);
+
         for (const entry of entries) {
           try {
+            console.log('entry', entry);
             const jobData = entry.data as unknown as ImportJob;
+            console.log('jobData', jobData);
             await this.processImportJob(jobData);
 
             // Acknowledge the processed entry
@@ -130,6 +134,11 @@ export class LeadStreamsService {
   private async processLeadBatches(job: ImportJob): Promise<void> {
     const { batch, agencyId, agencyCode, progress } = job;
 
+    console.log('batch', batch);
+    console.log('agencyId', agencyId);
+    console.log('agencyCode', agencyCode);
+    console.log('progress', progress);
+
     // as we already pushing the batch to stream, we can process it here
     const batchResults = await this.processLeadBatch(batch, agencyId, agencyCode);
 
@@ -153,14 +162,20 @@ export class LeadStreamsService {
     const errors: Array<{ index: number; error: string }> = [];
 
     try {
+      console.log('Preparing leads for bulk insertion');
+      console.log('leads', leads);
       // Prepare all leads for bulk insertion
       const leadsToInsert = await this.prepareLeadsForBulkInsertion(leads, agencyId, agencyCode);
+
+      console.log('leadsToInsert', leadsToInsert);
 
       // Perform bulk insertion
       const insertedLeads = await Lead.insertMany(leadsToInsert, {
         ordered: false, // Continue processing even if some documents fail
         rawResult: false,
       });
+
+      console.log('insertedLeads', insertedLeads);
 
       successful.push(...insertedLeads);
     } catch (error) {

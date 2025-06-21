@@ -3,7 +3,7 @@ import { Socket } from 'node:net';
 
 import { Application } from 'express';
 
-import { initializeLeadStreamsProcessor, shutdownLeadStreamsProcessor } from '../../module/lead/leadStreams.startup';
+import { leadStreamsManager } from '../../module/lead/leadStreams.manager';
 import { closeDB, connectDB } from '../config/db';
 import { redisManager } from '../config/redis/redisManager';
 import { InternalServerError } from '../utils/customError';
@@ -53,9 +53,12 @@ export class ApplicationServer {
       console.log('Starting server initialization...');
       await this.connectDatabase();
       await this.connectToRedis();
+
       this.createServer();
       await this.startListening();
-      await initializeLeadStreamsProcessor();
+      // await initializeLeadStreamsProcessor();
+      // start worker thread for lead streams;
+      await leadStreamsManager.startWorker();
       console.log(`Server successfully started on port ${this.port}`);
       console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
       console.log(`Server timeout: ${this.timeout}ms`);
@@ -168,7 +171,9 @@ export class ApplicationServer {
     try {
       await this.shutdownServer();
       await this.shutdownDatabase();
-      await shutdownLeadStreamsProcessor();
+      // await shutdownLeadStreamsProcessor();
+      // stop worker thread of lead streams
+      await leadStreamsManager.stopWorker();
       await redisManager.disconnect();
       clearTimeout(shutdownTimeout);
       this.logShutdownComplete();

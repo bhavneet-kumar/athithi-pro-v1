@@ -91,7 +91,23 @@ export class LeadController {
 
   async importLeads(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const result = await leadService.importLeads(req.user.agency as string, req.body, req.user.agencyCode as string);
+      const agencyId = '6854fb680f28aae8053e30cd';
+      const agencyCode = 'test';
+
+      req.body = {
+        ...req.body,
+        audit: {
+          createdBy: '68550270ab8149571e91cd5a',
+          createdAt: new Date(),
+          updatedBy: '68550270ab8149571e91cd5a',
+          updatedAt: new Date(),
+          deletedBy: '68550270ab8149571e91cd5a',
+          version: 1,
+          isDeleted: false,
+        },
+      };
+
+      const result = await leadService.importLeads(agencyId, req.body, agencyCode);
       res.customSuccess(new OkSuccess(result, 'Import job queued successfully.'));
     } catch (error) {
       next(error);

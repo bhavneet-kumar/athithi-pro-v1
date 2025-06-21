@@ -3,6 +3,8 @@
 
 import { parentPort } from 'node:worker_threads';
 
+import { connectDB } from '../../shared/config/db';
+
 import { LeadStreamsService, leadStreamsService } from './leadStreams.service';
 
 class LeadStreamsWorker {
@@ -15,6 +17,12 @@ class LeadStreamsWorker {
 
   async start() {
     try {
+      // Connect to database first
+      console.log('Worker: Connecting to database...');
+      await connectDB();
+      console.log('Worker: Database connected successfully');
+
+      // Start processing
       await this.leadStreamsServiceInstance.startProcessing();
 
       // Handle shutdown signals

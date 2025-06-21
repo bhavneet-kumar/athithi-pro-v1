@@ -134,13 +134,10 @@ export class LeadStreamsService {
   private async processLeadBatches(job: ImportJob): Promise<void> {
     const { batch, agencyId, agencyCode, progress } = job;
 
-    console.log('batch', batch);
-    console.log('agencyId', agencyId);
-    console.log('agencyCode', agencyCode);
-    console.log('progress', progress);
-
     // as we already pushing the batch to stream, we can process it here
     const batchResults = await this.processLeadBatch(batch, agencyId, agencyCode);
+
+    console.log('batchResults', batchResults);
 
     // update progress
     progress.processed += batch.length;
@@ -162,20 +159,14 @@ export class LeadStreamsService {
     const errors: Array<{ index: number; error: string }> = [];
 
     try {
-      console.log('Preparing leads for bulk insertion');
-      console.log('leads', leads);
       // Prepare all leads for bulk insertion
       const leadsToInsert = await this.prepareLeadsForBulkInsertion(leads, agencyId, agencyCode);
-
-      console.log('leadsToInsert', leadsToInsert);
 
       // Perform bulk insertion
       const insertedLeads = await Lead.insertMany(leadsToInsert, {
         ordered: false, // Continue processing even if some documents fail
         rawResult: false,
       });
-
-      console.log('insertedLeads', insertedLeads);
 
       successful.push(...insertedLeads);
     } catch (error) {
@@ -240,7 +231,6 @@ export class LeadStreamsService {
       { $inc: { value: leads.length } },
       { new: true, upsert: true },
     );
-
     const startValue = counter.value - leads.length + 1;
 
     return leads.map((leadData, index) =>
@@ -266,6 +256,8 @@ export class LeadStreamsService {
 
     const { fullName, email, phone, alternatePhone, status, source, priority, travelDetails, tags, notes } = leadData;
 
+    const aiScore = Number(aiScoreCalculator.calculateScore(leadData as unknown as ILead));
+
     return {
       ...leadData,
       agencyId: new Types.ObjectId(agencyId),
@@ -281,7 +273,7 @@ export class LeadStreamsService {
       tags: tags as string[],
       notes: notes as string,
       aiScore: {
-        value: Number(aiScoreCalculator.calculateScore(leadData as unknown as ILead)),
+        value: aiScore,
         lastCalculated: new Date(),
       },
     };

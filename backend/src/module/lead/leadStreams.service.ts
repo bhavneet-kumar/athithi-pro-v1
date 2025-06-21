@@ -1,3 +1,5 @@
+import { workerData } from 'node:worker_threads';
+
 import { Types } from 'mongoose';
 
 import { redisManager } from '../../shared/config/redis/redisManager';
@@ -34,12 +36,18 @@ const MESSAGE_READ_COUNT = 1; // read only one message at a time
 export class LeadStreamsService {
   private readonly STREAM_KEY = 'lead:imports';
   private readonly GROUP_NAME = 'lead-import-processors';
-  private readonly CONSUMER_NAME = 'lead-import-consumer-1';
+  // private readonly CONSUMER_NAME = 'lead-import-consumer-1';
   private isShuttingDown = false;
   private processingPromise: Promise<void> | null = null;
 
   constructor() {
     this.initializeConsumerGroup();
+  }
+
+  // Modify the consumer name to include worker ID
+  private getConsumerName(): string {
+    const workerId = (workerData?.workerId || 'main').toString();
+    return `lead-import-consumer-${workerId}`;
   }
 
   private async initializeConsumerGroup(): Promise<void> {
@@ -93,7 +101,7 @@ export class LeadStreamsService {
       while (!this.isShuttingDown) {
         const entries = await redisManager.streams.readGroup(
           this.GROUP_NAME,
-          this.CONSUMER_NAME,
+          this.getConsumerName(),
           this.STREAM_KEY,
           MESSAGE_READ_COUNT,
           BLOCK_TIMEOUT,

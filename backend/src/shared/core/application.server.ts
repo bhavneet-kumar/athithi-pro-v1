@@ -58,7 +58,7 @@ export class ApplicationServer {
       await this.startListening();
       // await initializeLeadStreamsProcessor();
       // start worker thread for lead streams;
-      await leadStreamsManager.startWorker();
+      await leadStreamsManager.startWorkers();
       console.log(`Server successfully started on port ${this.port}`);
       console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
       console.log(`Server timeout: ${this.timeout}ms`);
@@ -173,7 +173,7 @@ export class ApplicationServer {
       await this.shutdownDatabase();
       // await shutdownLeadStreamsProcessor();
       // stop worker thread of lead streams
-      await leadStreamsManager.stopWorker();
+      await leadStreamsManager.stopWorkers();
       await redisManager.disconnect();
       clearTimeout(shutdownTimeout);
       this.logShutdownComplete();
